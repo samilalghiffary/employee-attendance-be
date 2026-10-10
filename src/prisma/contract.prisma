@@ -1,0 +1,42 @@
+// use prisma-8
+enum Role {
+  @@type("pg/text@1")
+  ADMIN = "ADMIN"
+  EMPLOYEE = "EMPLOYEE"
+}
+
+enum AttendanceStatus {
+  @@type("pg/text@1")
+  PRESENT = "PRESENT"
+  LATE = "LATE"
+  ABSENT = "ABSENT"
+  LEAVE = "LEAVE"
+}
+
+model User {
+  id          String                     @id @default(uuid())
+  email       String                     @unique
+  name        String
+  password    String
+  role        Role                       @default(EMPLOYEE)
+  attendances Attendance[]
+  createdAt   TimestamptzString          @default(now())
+  updatedAt   temporal.updatedAtString()
+}
+
+model Attendance {
+  id        String                     @id @default(uuid())
+  userId    String
+  user      User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateString
+  checkIn   TimestamptzString?
+  checkOut  TimestamptzString?
+  status    AttendanceStatus           @default(PRESENT)
+  notes     String?
+  createdAt TimestamptzString          @default(now())
+  updatedAt temporal.updatedAtString()
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+}
