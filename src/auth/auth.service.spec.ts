@@ -148,36 +148,4 @@ describe('AuthService', () => {
       expect(mockJwtService.signAsync).not.toHaveBeenCalled();
     });
   });
-
-  describe('getProfile', () => {
-    it('should return user profile if user exists', async () => {
-      const existingUser = {
-        id: 'user-uuid-123',
-        email: 'budi@company.com',
-        name: 'Budi Santoso',
-        role: UserRole.EMPLOYEE,
-        createdAt: '2026-10-11T03:00:00.000Z',
-      };
-
-      mockPrismaClient.orm.public.User.where.mockReturnValue({
-        first: vi.fn().mockResolvedValue(existingUser),
-      });
-
-      const result = await authService.getProfile('user-uuid-123');
-
-      expect(result.id).toBe(existingUser.id);
-      expect(result.email).toBe(existingUser.email);
-      expect(result.role).toBe(UserRole.EMPLOYEE);
-    });
-
-    it('should throw UnauthorizedException if user does not exist', async () => {
-      mockPrismaClient.orm.public.User.where.mockReturnValue({
-        first: vi.fn().mockResolvedValue(null),
-      });
-
-      await expect(authService.getProfile('non-existent-id')).rejects.toThrow(
-        UnauthorizedException,
-      );
-    });
-  });
 });

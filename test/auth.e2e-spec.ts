@@ -144,28 +144,5 @@ describe('Auth Module (e2e)', () => {
       expect(res.body.message).toBe('Invalid email or password');
     });
   });
-
-  describe('GET /api/auth/me', () => {
-    it('should return authenticated user profile with valid Bearer token (200)', async () => {
-      const res = await request(app.getHttpServer())
-        .get('/api/auth/me')
-        .set('Authorization', `Bearer ${employeeAccessToken}`)
-        .expect(200);
-
-      expect(res.body.email).toBe(testEmail);
-      expect(res.body.name).toBe('E2E Tester');
-      expect(res.body.role).toBe('EMPLOYEE');
-    });
-
-    it('should return 401 Unauthorized when Authorization header is missing', async () => {
-      await request(app.getHttpServer()).get('/api/auth/me').expect(401);
-    });
-
-    it('should return 401 Unauthorized when Bearer token is invalid/tampered', async () => {
-      await request(app.getHttpServer())
-        .get('/api/auth/me')
-        .set('Authorization', 'Bearer invalid-token-string')
-        .expect(401);
-    });
-  });
 });
+

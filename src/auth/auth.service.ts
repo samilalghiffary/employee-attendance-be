@@ -10,7 +10,6 @@ import { PrismaService } from '../prisma.service.js';
 import type {
   LoginResponseDto,
   RegisterResponseDto,
-  UserProfileDto,
 } from './dto/auth-response.dto.js';
 import type { LoginDto } from './dto/login.dto.js';
 import type { RegisterDto } from './dto/register.dto.js';
@@ -102,24 +101,6 @@ export class AuthService {
         role: user.role as UserRole,
         createdAt: user.createdAt,
       },
-    };
-  }
-
-  async getProfile(userId: string): Promise<UserProfileDto> {
-    const user = await this.prisma.client.orm.public.User.where({
-      id: userId,
-    }).first();
-
-    if (!user) {
-      throw new UnauthorizedException('User no longer exists');
-    }
-
-    return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role as UserRole,
-      createdAt: user.createdAt,
     };
   }
 }

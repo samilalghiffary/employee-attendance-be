@@ -83,6 +83,10 @@ describe('Users Module (e2e)', () => {
       expect(res.body.data.email).toBe(employeeEmail);
       expect(res.body.data.isActive).toBe(true);
     });
+
+    it('should reject unauthenticated request with 401', async () => {
+      await request(app.getHttpServer()).get('/api/users/profile').expect(401);
+    });
   });
 
   describe('PATCH /api/users/profile', () => {

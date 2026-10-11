@@ -1,27 +1,13 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { ApiDoc } from '../common/decorators/api-doc.decorator.js';
 import { AuthService } from './auth.service.js';
 import {
-  type AuthenticatedUser,
-  CurrentUser,
-} from './decorators/current-user.decorator.js';
-import {
   LoginResponseDto,
   RegisterResponseDto,
-  UserProfileDto,
 } from './dto/auth-response.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
-import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 
 @ApiTags('Auth & RBAC')
 @Controller('auth')
@@ -54,22 +40,5 @@ export class AuthController {
   })
   async login(@Body() dto: LoginDto): Promise<LoginResponseDto> {
     return this.authService.login(dto);
-  }
-
-  @Get('me')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  @ApiDoc({
-    summary: 'Get current user profile',
-    description:
-      'Returns the authenticated user details from the verified JWT access token.',
-    status: HttpStatus.OK,
-    responseType: UserProfileDto,
-    isAuth: true,
-  })
-  async getProfile(
-    @CurrentUser() user: AuthenticatedUser,
-  ): Promise<UserProfileDto> {
-    return this.authService.getProfile(user.id);
   }
 }
