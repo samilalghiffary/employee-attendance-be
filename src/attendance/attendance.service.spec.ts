@@ -49,7 +49,11 @@ describe('AttendanceService', () => {
         createdAt: '2026-10-11T01:30:00.000Z',
       });
 
-      const result = await attendanceService.checkIn(userId, { notes: 'Pagi' });
+      const result = await attendanceService.checkIn(userId, {
+        notes: 'Pagi',
+        latitude: -6.2,
+        longitude: 106.8,
+      });
 
       expect(result.success).toBe(true);
       expect(result.data.id).toBe('attendance-1');
@@ -66,7 +70,11 @@ describe('AttendanceService', () => {
       });
 
       await expect(
-        attendanceService.checkIn(userId, { notes: 'Pagi lagi' }),
+        attendanceService.checkIn(userId, {
+          notes: 'Pagi lagi',
+          latitude: -6.2,
+          longitude: 106.8,
+        }),
       ).rejects.toThrow(ConflictException);
     });
   });
@@ -79,9 +87,12 @@ describe('AttendanceService', () => {
         first: vi.fn().mockResolvedValue(null),
       });
 
-      await expect(attendanceService.checkOut(userId, {})).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        attendanceService.checkOut(userId, {
+          latitude: -6.2,
+          longitude: 106.8,
+        }),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw ConflictException if user has already checked out', async () => {
@@ -94,9 +105,12 @@ describe('AttendanceService', () => {
         }),
       });
 
-      await expect(attendanceService.checkOut(userId, {})).rejects.toThrow(
-        ConflictException,
-      );
+      await expect(
+        attendanceService.checkOut(userId, {
+          latitude: -6.2,
+          longitude: 106.8,
+        }),
+      ).rejects.toThrow(ConflictException);
     });
 
     it('should successfully check out', async () => {
@@ -127,6 +141,8 @@ describe('AttendanceService', () => {
 
       const result = await attendanceService.checkOut(userId, {
         notes: 'Selesai shift',
+        latitude: -6.2,
+        longitude: 106.8,
       });
 
       expect(result.success).toBe(true);

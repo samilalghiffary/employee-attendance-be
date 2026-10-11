@@ -18,7 +18,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'93fd57171c9590247aa026cd9862c49b6958a0f84931d396bed963cbc84ddb6b'>;
+  StorageHashBase<'0b064816e9660ef9644d81b3163f4a89bd30bf5df828c140c388b5fded978800'>;
 export type ExecutionHash =
   ExecutionHashBase<'04f90742eb16e51ce12263ff22e9ea89783d6ba3c711712711d2d64f2ea08e32'>;
 export type ProfileHash =
@@ -236,7 +236,11 @@ export type FieldOutputTypes = {
   readonly public: {
     readonly Attendance: {
       readonly checkIn: CodecTypes['pg/timestamptz-string@1']['output'] | null;
+      readonly checkInLat: CodecTypes['pg/float8@1']['output'];
+      readonly checkInLng: CodecTypes['pg/float8@1']['output'];
       readonly checkOut: CodecTypes['pg/timestamptz-string@1']['output'] | null;
+      readonly checkOutLat: CodecTypes['pg/float8@1']['output'] | null;
+      readonly checkOutLng: CodecTypes['pg/float8@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly date: CodecTypes['pg/date-string@1']['output'];
       readonly id: CodecTypes['pg/text@1']['output'];
@@ -261,7 +265,11 @@ export type FieldInputTypes = {
   readonly public: {
     readonly Attendance: {
       readonly checkIn: CodecTypes['pg/timestamptz-string@1']['input'] | null;
+      readonly checkInLat: CodecTypes['pg/float8@1']['input'];
+      readonly checkInLng: CodecTypes['pg/float8@1']['input'];
       readonly checkOut: CodecTypes['pg/timestamptz-string@1']['input'] | null;
+      readonly checkOutLat: CodecTypes['pg/float8@1']['input'] | null;
+      readonly checkOutLng: CodecTypes['pg/float8@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly date: CodecTypes['pg/date-string@1']['input'];
       readonly id: CodecTypes['pg/text@1']['input'];
@@ -286,7 +294,11 @@ export type StorageColumnTypes = {
   readonly public: {
     readonly Attendance: {
       readonly checkIn: CodecTypes['pg/timestamptz-string@1']['output'] | null;
+      readonly checkInLat: CodecTypes['pg/float8@1']['output'];
+      readonly checkInLng: CodecTypes['pg/float8@1']['output'];
       readonly checkOut: CodecTypes['pg/timestamptz-string@1']['output'] | null;
+      readonly checkOutLat: CodecTypes['pg/float8@1']['output'] | null;
+      readonly checkOutLng: CodecTypes['pg/float8@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly date: CodecTypes['pg/date-string@1']['output'];
       readonly id: CodecTypes['pg/text@1']['output'];
@@ -311,7 +323,11 @@ export type StorageColumnInputTypes = {
   readonly public: {
     readonly Attendance: {
       readonly checkIn: CodecTypes['pg/timestamptz-string@1']['input'] | null;
+      readonly checkInLat: CodecTypes['pg/float8@1']['input'];
+      readonly checkInLng: CodecTypes['pg/float8@1']['input'];
       readonly checkOut: CodecTypes['pg/timestamptz-string@1']['input'] | null;
+      readonly checkOutLat: CodecTypes['pg/float8@1']['input'] | null;
+      readonly checkOutLng: CodecTypes['pg/float8@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly date: CodecTypes['pg/date-string@1']['input'];
       readonly id: CodecTypes['pg/text@1']['input'];
@@ -336,7 +352,11 @@ export type StorageColumnInputTypes = {
 export namespace Models {
   export type public_Attendance = {
     checkIn: CodecTypes['pg/timestamptz-string@1']['output'] | null;
+    checkInLat: CodecTypes['pg/float8@1']['output'];
+    checkInLng: CodecTypes['pg/float8@1']['output'];
     checkOut: CodecTypes['pg/timestamptz-string@1']['output'] | null;
+    checkOutLat: CodecTypes['pg/float8@1']['output'] | null;
+    checkOutLng: CodecTypes['pg/float8@1']['output'] | null;
     createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
     date: CodecTypes['pg/date-string@1']['output'];
     id: CodecTypes['pg/text@1']['output'];
@@ -394,9 +414,33 @@ type ContractBase = Omit<
                   readonly nullable: true;
                   readonly many: false;
                 };
+                readonly checkInLat: {
+                  readonly dataType: 'pg/float8';
+                  readonly codecId: 'pg/float8@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly checkInLng: {
+                  readonly dataType: 'pg/float8';
+                  readonly codecId: 'pg/float8@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
                 readonly checkOut: {
                   readonly dataType: 'pg/timestamptz';
                   readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly checkOutLat: {
+                  readonly dataType: 'pg/float8';
+                  readonly codecId: 'pg/float8@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly checkOutLng: {
+                  readonly dataType: 'pg/float8';
+                  readonly codecId: 'pg/float8@1';
                   readonly nullable: true;
                   readonly many: false;
                 };
@@ -584,12 +628,28 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/timestamptz-string@1';
                 };
               };
+              readonly checkInLat: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/float8@1' };
+              };
+              readonly checkInLng: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/float8@1' };
+              };
               readonly checkOut: {
                 readonly nullable: true;
                 readonly type: {
                   readonly kind: 'scalar';
                   readonly codecId: 'pg/timestamptz-string@1';
                 };
+              };
+              readonly checkOutLat: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/float8@1' };
+              };
+              readonly checkOutLng: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/float8@1' };
               };
               readonly createdAt: {
                 readonly nullable: false;
@@ -642,7 +702,11 @@ type ContractBase = Omit<
               readonly namespaceId: 'public';
               readonly fields: {
                 readonly checkIn: { readonly column: 'checkIn' };
+                readonly checkInLat: { readonly column: 'checkInLat' };
+                readonly checkInLng: { readonly column: 'checkInLng' };
                 readonly checkOut: { readonly column: 'checkOut' };
+                readonly checkOutLat: { readonly column: 'checkOutLat' };
+                readonly checkOutLng: { readonly column: 'checkOutLng' };
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly date: { readonly column: 'date' };
                 readonly id: { readonly column: 'id' };

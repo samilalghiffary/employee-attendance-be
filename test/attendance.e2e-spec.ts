@@ -100,20 +100,40 @@ describe('Attendance Module (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/api/attendance/check-in')
         .set('Authorization', `Bearer ${employeeToken}`)
-        .send({ notes: 'First check-in today' })
+        .send({
+          notes: 'First check-in today',
+          latitude: -6.2088,
+          longitude: 106.8456,
+        })
         .expect(201);
 
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveProperty('id');
       expect(res.body.data.checkIn).toBeDefined();
+      expect(res.body.data.checkInLat).toBe(-6.2088);
+      expect(res.body.data.checkInLng).toBe(106.8456);
       expect(res.body.data.notes).toBe('First check-in today');
+    });
+
+    it('should reject check-in if latitude or longitude is missing (400 Bad Request)', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/attendance/check-in')
+        .set('Authorization', `Bearer ${employeeToken}`)
+        .send({ notes: 'No GPS' })
+        .expect(400);
+
+      expect(res.body.message).toBeDefined();
     });
 
     it('should prevent double check-in on the same day (409 Conflict)', async () => {
       const res = await request(app.getHttpServer())
         .post('/api/attendance/check-in')
         .set('Authorization', `Bearer ${employeeToken}`)
-        .send({ notes: 'Trying again' })
+        .send({
+          notes: 'Trying again',
+          latitude: -6.2088,
+          longitude: 106.8456,
+        })
         .expect(409);
 
       expect(res.body.message).toContain('already checked in');
@@ -125,18 +145,38 @@ describe('Attendance Module (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/api/attendance/check-out')
         .set('Authorization', `Bearer ${employeeToken}`)
-        .send({ notes: 'Finishing shift' })
+        .send({
+          notes: 'Finishing shift',
+          latitude: -6.2089,
+          longitude: 106.8457,
+        })
         .expect(200);
 
       expect(res.body.success).toBe(true);
       expect(res.body.data.checkOut).toBeDefined();
+      expect(res.body.data.checkOutLat).toBe(-6.2089);
+      expect(res.body.data.checkOutLng).toBe(106.8457);
+    });
+
+    it('should reject check-out if latitude or longitude is missing (400 Bad Request)', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/attendance/check-out')
+        .set('Authorization', `Bearer ${employeeToken}`)
+        .send({ notes: 'No GPS checkout' })
+        .expect(400);
+
+      expect(res.body.message).toBeDefined();
     });
 
     it('should prevent duplicate check-out on the same day (409 Conflict)', async () => {
       const res = await request(app.getHttpServer())
         .post('/api/attendance/check-out')
         .set('Authorization', `Bearer ${employeeToken}`)
-        .send({ notes: 'Checkout again' })
+        .send({
+          notes: 'Checkout again',
+          latitude: -6.2089,
+          longitude: 106.8457,
+        })
         .expect(409);
 
       expect(res.body.message).toContain('already checked out');

@@ -26,10 +26,34 @@ export class AttendanceItemDto {
   checkIn!: string | null;
 
   /**
+   * Latitude coordinate of check-in location
+   * @example -6.200000
+   */
+  checkInLat!: number | null;
+
+  /**
+   * Longitude coordinate of check-in location
+   * @example 106.816666
+   */
+  checkInLng!: number | null;
+
+  /**
    * Check-out timestamp (ISO format)
    * @example 2026-10-11T17:00:00.000Z
    */
   checkOut!: string | null;
+
+  /**
+   * Latitude coordinate of check-out location
+   * @example -6.200000
+   */
+  checkOutLat!: number | null;
+
+  /**
+   * Longitude coordinate of check-out location
+   * @example 106.816666
+   */
+  checkOutLng!: number | null;
 
   /**
    * Attendance status
@@ -64,10 +88,23 @@ export class AttendanceItemDto {
       userId: record.userId,
       date: record.date,
       checkIn: record.checkIn ?? null,
+      checkInLat: record.checkInLat != null ? Number(record.checkInLat) : null,
+      checkInLng: record.checkInLng != null ? Number(record.checkInLng) : null,
       checkOut: record.checkOut ?? null,
+      checkOutLat:
+        record.checkOutLat != null ? Number(record.checkOutLat) : null,
+      checkOutLng:
+        record.checkOutLng != null ? Number(record.checkOutLng) : null,
       status: record.status as AttendanceStatus,
       notes: record.notes ?? null,
       createdAt: record.createdAt,
+      user: record.user
+        ? {
+            id: record.user.id,
+            name: record.user.name,
+            email: record.user.email,
+          }
+        : undefined,
     };
   }
 }

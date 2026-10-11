@@ -62,10 +62,38 @@
                   "kind": "scalar"
                 }
               },
+              "checkInLat": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/float8@1",
+                  "kind": "scalar"
+                }
+              },
+              "checkInLng": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/float8@1",
+                  "kind": "scalar"
+                }
+              },
               "checkOut": {
                 "nullable": true,
                 "type": {
                   "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "checkOutLat": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/float8@1",
+                  "kind": "scalar"
+                }
+              },
+              "checkOutLng": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/float8@1",
                   "kind": "scalar"
                 }
               },
@@ -148,8 +176,20 @@
                 "checkIn": {
                   "column": "checkIn"
                 },
+                "checkInLat": {
+                  "column": "checkInLat"
+                },
+                "checkInLng": {
+                  "column": "checkInLng"
+                },
                 "checkOut": {
                   "column": "checkOut"
+                },
+                "checkOutLat": {
+                  "column": "checkOutLat"
+                },
+                "checkOutLng": {
+                  "column": "checkOutLng"
                 },
                 "createdAt": {
                   "column": "createdAt"
@@ -313,9 +353,29 @@
                   "dataType": "pg/timestamptz",
                   "nullable": true
                 },
+                "checkInLat": {
+                  "codecId": "pg/float8@1",
+                  "dataType": "pg/float8",
+                  "nullable": false
+                },
+                "checkInLng": {
+                  "codecId": "pg/float8@1",
+                  "dataType": "pg/float8",
+                  "nullable": false
+                },
                 "checkOut": {
                   "codecId": "pg/timestamptz-string@1",
                   "dataType": "pg/timestamptz",
+                  "nullable": true
+                },
+                "checkOutLat": {
+                  "codecId": "pg/float8@1",
+                  "dataType": "pg/float8",
+                  "nullable": true
+                },
+                "checkOutLng": {
+                  "codecId": "pg/float8@1",
+                  "dataType": "pg/float8",
                   "nullable": true
                 },
                 "createdAt": {
@@ -526,7 +586,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "93fd57171c9590247aa026cd9862c49b6958a0f84931d396bed963cbc84ddb6b"
+    "storageHash": "0b064816e9660ef9644d81b3163f4a89bd30bf5df828c140c388b5fded978800"
   },
   "execution": {
     "executionHash": "04f90742eb16e51ce12263ff22e9ea89783d6ba3c711712711d2d64f2ea08e32",

@@ -26,16 +26,20 @@ model User {
 }
 
 model Attendance {
-  id        String                     @id @default(uuid())
-  userId    String
-  user      User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date      DateString
-  checkIn   TimestamptzString?
-  checkOut  TimestamptzString?
-  status    AttendanceStatus           @default(PRESENT)
-  notes     String?
-  createdAt TimestamptzString          @default(now())
-  updatedAt temporal.updatedAtString()
+  id          String                     @id @default(uuid())
+  userId      String
+  user        User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date        DateString
+  checkIn     TimestamptzString?
+  checkInLat  Float
+  checkInLng  Float
+  checkOut    TimestamptzString?
+  checkOutLat Float?
+  checkOutLng Float?
+  status      AttendanceStatus           @default(PRESENT)
+  notes       String?
+  createdAt   TimestamptzString          @default(now())
+  updatedAt   temporal.updatedAtString()
 
   @@unique([userId, date])
   @@index([userId])

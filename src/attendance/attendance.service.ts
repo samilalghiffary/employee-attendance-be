@@ -34,6 +34,17 @@ export class AttendanceService {
     userId: string,
     dto: CheckInDto,
   ): Promise<AttendanceResponseDto> {
+    if (
+      dto.latitude == null ||
+      dto.longitude == null ||
+      Number.isNaN(Number(dto.latitude)) ||
+      Number.isNaN(Number(dto.longitude))
+    ) {
+      throw new BadRequestException(
+        'Geolocation coordinates (latitude and longitude) are required for check-in.',
+      );
+    }
+
     const now = new Date();
     const todayStr = getLocalDateString(now);
 
@@ -58,6 +69,8 @@ export class AttendanceService {
       userId,
       date: todayStr,
       checkIn: now.toISOString(),
+      checkInLat: Number(dto.latitude),
+      checkInLng: Number(dto.longitude),
       status,
       notes: dto.notes ?? null,
     });
@@ -76,6 +89,17 @@ export class AttendanceService {
     userId: string,
     dto: CheckOutDto,
   ): Promise<AttendanceResponseDto> {
+    if (
+      dto.latitude == null ||
+      dto.longitude == null ||
+      Number.isNaN(Number(dto.latitude)) ||
+      Number.isNaN(Number(dto.longitude))
+    ) {
+      throw new BadRequestException(
+        'Geolocation coordinates (latitude and longitude) are required for check-out.',
+      );
+    }
+
     const now = new Date();
     const todayStr = getLocalDateString(now);
 
@@ -104,6 +128,8 @@ export class AttendanceService {
       id: existing.id,
     }).update({
       checkOut: now.toISOString(),
+      checkOutLat: Number(dto.latitude),
+      checkOutLng: Number(dto.longitude),
       notes: updatedNotes,
     });
 
