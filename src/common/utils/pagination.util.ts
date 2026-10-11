@@ -1,5 +1,13 @@
 import type { PaginatedResult } from '../dto/pagination.dto.js';
 
+export function getPaginationParams(query: { page?: number; limit?: number }) {
+  const page = query.page && query.page > 0 ? query.page : 1;
+  const limit = query.limit && query.limit > 0 ? query.limit : 10;
+  const offset = (page - 1) * limit;
+
+  return { page, limit, offset };
+}
+
 export function createPaginatedResponse<T>(
   data: T[],
   total: number,

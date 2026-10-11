@@ -206,7 +206,7 @@ describe('Attendance Module (e2e)', () => {
         .expect(403);
     });
 
-    it('should allow access to admin with 200 OK', async () => {
+    it('should allow access to admin with 200 OK and return enriched user details', async () => {
       const res = await request(app.getHttpServer())
         .get('/api/admin/attendance/overview')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -215,6 +215,11 @@ describe('Attendance Module (e2e)', () => {
       expect(res.body.success).toBe(true);
       expect(Array.isArray(res.body.data)).toBe(true);
       expect(res.body.meta).toHaveProperty('total');
+      if (res.body.data.length > 0) {
+        expect(res.body.data[0]).toHaveProperty('user');
+        expect(res.body.data[0].user).toHaveProperty('name');
+        expect(res.body.data[0].user).toHaveProperty('email');
+      }
     });
   });
 });

@@ -8,7 +8,10 @@ import {
   getLocalDateString,
   isAfterThresholdTime,
 } from '../common/utils/date.util.js';
-import { createPaginatedResponse } from '../common/utils/pagination.util.js';
+import {
+  createPaginatedResponse,
+  getPaginationParams,
+} from '../common/utils/pagination.util.js';
 import { PrismaService } from '../prisma.service.js';
 import {
   AttendanceItemDto,
@@ -169,15 +172,15 @@ export class AttendanceService {
     userId: string,
     query: QueryAttendanceDto,
   ): Promise<PaginatedAttendanceResponseDto> {
-    const page = query.page > 0 ? query.page : 1;
-    const limit = query.limit > 0 ? query.limit : 10;
-    const offset = (page - 1) * limit;
+    const { page, limit, offset } = getPaginationParams(query);
 
     const allUserRecords = await this.prisma.client.orm.public.Attendance.where(
       {
         userId,
       },
-    ).all();
+    )
+      .orderBy([(row) => row.date.desc(), (row) => row.id.asc()])
+      .all();
 
     let filtered = allUserRecords;
 
@@ -187,8 +190,6 @@ export class AttendanceService {
     if (query.endDate) {
       filtered = filtered.filter((item) => item.date <= query.endDate!);
     }
-
-    filtered.sort((a, b) => (b.date > a.date ? 1 : -1));
 
     const total = filtered.length;
     const paginated = filtered.slice(offset, offset + limit);
@@ -204,11 +205,13 @@ export class AttendanceService {
   async getAdminOverview(
     query: QueryAdminAttendanceDto,
   ): Promise<PaginatedAttendanceResponseDto> {
-    const page = query.page > 0 ? query.page : 1;
-    const limit = query.limit > 0 ? query.limit : 10;
-    const offset = (page - 1) * limit;
+    const { page, limit, offset } = getPaginationParams(query);
 
-    const allRecords = await this.prisma.client.orm.public.Attendance.all();
+    const allRecords = await this.prisma.client.orm.public.Attendance.include(
+      'user',
+    )
+      .orderBy([(row) => row.date.desc(), (row) => row.id.asc()])
+      .all();
 
     let filtered = allRecords;
 
@@ -224,8 +227,6 @@ export class AttendanceService {
     if (query.endDate) {
       filtered = filtered.filter((item) => item.date <= query.endDate!);
     }
-
-    filtered.sort((a, b) => (b.date > a.date ? 1 : -1));
 
     const total = filtered.length;
     const paginated = filtered.slice(offset, offset + limit);

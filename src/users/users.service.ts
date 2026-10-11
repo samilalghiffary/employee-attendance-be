@@ -6,7 +6,10 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import bcrypt from 'bcrypt';
-import { createPaginatedResponse } from '../common/utils/pagination.util.js';
+import {
+  createPaginatedResponse,
+  getPaginationParams,
+} from '../common/utils/pagination.util.js';
 import { PrismaService } from '../prisma.service.js';
 import type { AdminUpdateUserDto } from './dto/admin-update-user.dto.js';
 import type { ChangePasswordDto } from './dto/change-password.dto.js';
@@ -248,9 +251,7 @@ export class UsersService {
   }
 
   async getAllUsers(query: QueryUsersDto): Promise<PaginatedUserResponseDto> {
-    const page = query.page > 0 ? query.page : 1;
-    const limit = query.limit > 0 ? query.limit : 10;
-    const offset = (page - 1) * limit;
+    const { page, limit, offset } = getPaginationParams(query);
 
     const allUsers = await this.prisma.client.orm.public.User.all();
 

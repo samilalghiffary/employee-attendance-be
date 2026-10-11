@@ -15,6 +15,10 @@ describe('AttendanceService', () => {
           where: vi.fn(),
           create: vi.fn(),
           all: vi.fn(),
+          include: vi.fn(),
+        },
+        User: {
+          all: vi.fn(),
         },
       },
     },
@@ -191,24 +195,26 @@ describe('AttendanceService', () => {
 
     it('should return paginated history filtered by user', async () => {
       mockPrismaClient.orm.public.Attendance.where.mockReturnValue({
-        all: vi.fn().mockResolvedValue([
-          {
-            id: 'attendance-1',
-            userId,
-            date: '2026-10-11',
-            checkIn: '2026-10-11T01:30:00.000Z',
-            checkOut: '2026-10-11T10:00:00.000Z',
-            status: AttendanceStatus.PRESENT,
-          },
-          {
-            id: 'attendance-2',
-            userId,
-            date: '2026-10-10',
-            checkIn: '2026-10-10T02:30:00.000Z',
-            checkOut: '2026-10-10T10:00:00.000Z',
-            status: AttendanceStatus.LATE,
-          },
-        ]),
+        orderBy: vi.fn().mockReturnValue({
+          all: vi.fn().mockResolvedValue([
+            {
+              id: 'attendance-1',
+              userId,
+              date: '2026-10-11',
+              checkIn: '2026-10-11T01:30:00.000Z',
+              checkOut: '2026-10-11T10:00:00.000Z',
+              status: AttendanceStatus.PRESENT,
+            },
+            {
+              id: 'attendance-2',
+              userId,
+              date: '2026-10-10',
+              checkIn: '2026-10-10T02:30:00.000Z',
+              checkOut: '2026-10-10T10:00:00.000Z',
+              status: AttendanceStatus.LATE,
+            },
+          ]),
+        }),
       });
 
       const result = await attendanceService.getMyHistory(userId, {
@@ -224,21 +230,35 @@ describe('AttendanceService', () => {
   });
 
   describe('getAdminOverview', () => {
-    it('should return all attendance records for admin', async () => {
-      mockPrismaClient.orm.public.Attendance.all.mockResolvedValue([
-        {
-          id: 'att-1',
-          userId: 'user-1',
-          date: '2026-10-11',
-          status: AttendanceStatus.PRESENT,
-        },
-        {
-          id: 'att-2',
-          userId: 'user-2',
-          date: '2026-10-11',
-          status: AttendanceStatus.LATE,
-        },
-      ]);
+    it('should return all attendance records for admin with user details', async () => {
+      mockPrismaClient.orm.public.Attendance.include.mockReturnValue({
+        orderBy: vi.fn().mockReturnValue({
+          all: vi.fn().mockResolvedValue([
+            {
+              id: 'att-1',
+              userId: 'user-1',
+              date: '2026-10-11',
+              status: AttendanceStatus.PRESENT,
+              user: {
+                id: 'user-1',
+                name: 'Budi Santoso',
+                email: 'budi@company.com',
+              },
+            },
+            {
+              id: 'att-2',
+              userId: 'user-2',
+              date: '2026-10-11',
+              status: AttendanceStatus.LATE,
+              user: {
+                id: 'user-2',
+                name: 'Siti Rahma',
+                email: 'siti@company.com',
+              },
+            },
+          ]),
+        }),
+      });
 
       const result = await attendanceService.getAdminOverview({
         page: 1,
@@ -248,6 +268,12 @@ describe('AttendanceService', () => {
       expect(result.success).toBe(true);
       expect(result.data.length).toBe(2);
       expect(result.meta.total).toBe(2);
+      expect(result.data[0].user).toEqual({
+        id: 'user-1',
+        name: 'Budi Santoso',
+        email: 'budi@company.com',
+      });
+      expect(result.data[1].user?.name).toBe('Siti Rahma');
     });
   });
 });
