@@ -15,8 +15,12 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('should return API information metadata', () => {
+      const info = appController.getApiInfo();
+      expect(info.name).toBe('Employee Attendance API');
+      expect(info.version).toBe('1.0.0');
+      expect(info.endpoints.docs).toBe('/api/docs');
+      expect(info.endpoints.health).toBe('/api/health');
     });
   });
 });

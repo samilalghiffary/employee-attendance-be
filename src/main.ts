@@ -25,6 +25,7 @@ async function bootstrap() {
       'REST API Documentation for Employee Attendance Management System',
     )
     .setVersion('1.0.0')
+    .addTag('Root', 'General API information and discovery')
     .addTag('Health Check', 'Application and database connectivity status')
     .addTag(
       'Auth & RBAC',
