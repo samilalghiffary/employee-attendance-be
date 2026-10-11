@@ -2,8 +2,11 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
 } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { AttendanceStatus } from '../common/enums/attendance-status.enum.js';
+import { UserRole } from '../common/enums/role.enum.js';
 import {
   getLocalDateString,
   isAfterThresholdTime,
@@ -28,6 +31,7 @@ import type {
 
 @Injectable()
 export class AttendanceService {
+  private readonly logger = new Logger(AttendanceService.name);
   private readonly LATE_THRESHOLD_HOUR = 9;
   private readonly LATE_THRESHOLD_MINUTE = 0;
 
@@ -240,10 +244,10 @@ export class AttendanceService {
   }
 
   async getSummary(query: { startDate?: string; endDate?: string }) {
-    const allUsers = await this.prisma.client.orm.public.User.all();
-    const activeEmployees = allUsers.filter(
-      (u) => u.role === 'EMPLOYEE' && u.isActive,
-    );
+    const activeEmployees = await this.prisma.client.orm.public.User.where({
+      role: UserRole.EMPLOYEE,
+      isActive: true,
+    }).all();
 
     const allAttendances = await this.prisma.client.orm.public.Attendance.all();
 
@@ -264,6 +268,9 @@ export class AttendanceService {
     const totalLeave = filtered.filter(
       (a) => a.status === AttendanceStatus.LEAVE,
     ).length;
+    const totalAbsent = filtered.filter(
+      (a) => a.status === AttendanceStatus.ABSENT,
+    ).length;
 
     const totalExpected = activeEmployees.length;
     const attendedCount = totalPresent + totalLate;
@@ -280,8 +287,58 @@ export class AttendanceService {
         totalPresent,
         totalLate,
         totalLeave,
+        totalAbsent,
         attendanceRate: ratePercent,
       },
+    };
+  }
+
+  @Cron('59 23 * * 1-5', { timeZone: 'Asia/Jakarta' })
+  async handleDailyAbsentCron(): Promise<void> {
+    const todayStr = getLocalDateString(new Date());
+    this.logger.log(
+      `[Cron] Running automated absent check for date: ${todayStr}`,
+    );
+    const marked = await this.markDailyAbsents(todayStr);
+    this.logger.log(
+      `[Cron] Successfully marked ${marked.count} employee(s) as ABSENT for ${todayStr}.`,
+    );
+  }
+
+  async markDailyAbsents(
+    targetDate?: string,
+  ): Promise<{ count: number; date: string }> {
+    const dateStr = targetDate ?? getLocalDateString(new Date());
+
+    const activeEmployees = await this.prisma.client.orm.public.User.where({
+      role: UserRole.EMPLOYEE,
+      isActive: true,
+    }).all();
+
+    const attendancesOnDate =
+      await this.prisma.client.orm.public.Attendance.where({
+        date: dateStr,
+      }).all();
+
+    const existingUserIds = new Set(attendancesOnDate.map((a) => a.userId));
+    const absentEmployees = activeEmployees.filter(
+      (emp) => !existingUserIds.has(emp.id),
+    );
+
+    let createdCount = 0;
+    for (const emp of absentEmployees) {
+      await this.prisma.client.orm.public.Attendance.create({
+        userId: emp.id,
+        date: dateStr,
+        status: AttendanceStatus.ABSENT,
+        notes: 'System: Automatically marked as Absent',
+      });
+      createdCount++;
+    }
+
+    return {
+      count: createdCount,
+      date: dateStr,
     };
   }
 }

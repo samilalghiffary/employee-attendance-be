@@ -3,6 +3,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -58,5 +59,30 @@ export class AttendanceAdminController {
     @Query('endDate') endDate?: string,
   ): Promise<AttendanceSummaryResponseDto> {
     return this.attendanceService.getSummary({ startDate, endDate });
+  }
+
+  @Post('sync-absent')
+  @HttpCode(HttpStatus.OK)
+  @ApiDoc({
+    summary: 'Trigger automated absent marking (Admin)',
+    description:
+      'Scans active employees without attendance for a given date (defaults to today) and marks them as ABSENT.',
+    status: HttpStatus.OK,
+    responseDescription: 'Absent sync executed successfully',
+    isAuth: true,
+  })
+  async syncAbsent(
+    @Query('date') date?: string,
+  ): Promise<{
+    success: boolean;
+    message: string;
+    data: { count: number; date: string };
+  }> {
+    const result = await this.attendanceService.markDailyAbsents(date);
+    return {
+      success: true,
+      message: `Successfully processed absent records for ${result.date}`,
+      data: result,
+    };
   }
 }

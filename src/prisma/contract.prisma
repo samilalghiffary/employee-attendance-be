@@ -31,8 +31,8 @@ model Attendance {
   user        User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
   date        DateString
   checkIn     TimestamptzString?
-  checkInLat  Float
-  checkInLng  Float
+  checkInLat  Float?
+  checkInLng  Float?
   checkOut    TimestamptzString?
   checkOutLat Float?
   checkOutLng Float?

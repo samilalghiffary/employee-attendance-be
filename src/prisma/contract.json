@@ -63,14 +63,14 @@
                 }
               },
               "checkInLat": {
-                "nullable": false,
+                "nullable": true,
                 "type": {
                   "codecId": "pg/float8@1",
                   "kind": "scalar"
                 }
               },
               "checkInLng": {
-                "nullable": false,
+                "nullable": true,
                 "type": {
                   "codecId": "pg/float8@1",
                   "kind": "scalar"
@@ -356,12 +356,12 @@
                 "checkInLat": {
                   "codecId": "pg/float8@1",
                   "dataType": "pg/float8",
-                  "nullable": false
+                  "nullable": true
                 },
                 "checkInLng": {
                   "codecId": "pg/float8@1",
                   "dataType": "pg/float8",
-                  "nullable": false
+                  "nullable": true
                 },
                 "checkOut": {
                   "codecId": "pg/timestamptz-string@1",
@@ -586,7 +586,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "0b064816e9660ef9644d81b3163f4a89bd30bf5df828c140c388b5fded978800"
+    "storageHash": "f452bb79db14428d0b70770d68bbeab88c3603823893055245a7dd13b77af46f"
   },
   "execution": {
     "executionHash": "04f90742eb16e51ce12263ff22e9ea89783d6ba3c711712711d2d64f2ea08e32",

@@ -19,6 +19,7 @@ describe('AttendanceService', () => {
         },
         User: {
           all: vi.fn(),
+          where: vi.fn(),
         },
       },
     },
@@ -274,6 +275,43 @@ describe('AttendanceService', () => {
         email: 'budi@company.com',
       });
       expect(result.data[1].user?.name).toBe('Siti Rahma');
+    });
+  });
+
+  describe('markDailyAbsents', () => {
+    it('should create ABSENT records for employees who have not checked in', async () => {
+      mockPrismaClient.orm.public.User.where.mockReturnValue({
+        all: vi.fn().mockResolvedValue([
+          { id: 'emp-1', role: 'EMPLOYEE', isActive: true },
+          { id: 'emp-2', role: 'EMPLOYEE', isActive: true },
+        ]),
+      });
+
+      mockPrismaClient.orm.public.Attendance.where.mockReturnValue({
+        all: vi.fn().mockResolvedValue([
+          { id: 'att-1', userId: 'emp-1', date: '2026-10-11' }, // already checked in
+        ]),
+      });
+
+      mockPrismaClient.orm.public.Attendance.create.mockResolvedValue({
+        id: 'att-new',
+        userId: 'emp-2',
+        date: '2026-10-11',
+        status: AttendanceStatus.ABSENT,
+      });
+
+      const result = await attendanceService.markDailyAbsents('2026-10-11');
+
+      expect(result.count).toBe(1);
+      expect(result.date).toBe('2026-10-11');
+      expect(
+        mockPrismaClient.orm.public.Attendance.create,
+      ).toHaveBeenCalledWith({
+        userId: 'emp-2',
+        date: '2026-10-11',
+        status: AttendanceStatus.ABSENT,
+        notes: 'System: Automatically marked as Absent',
+      });
     });
   });
 });

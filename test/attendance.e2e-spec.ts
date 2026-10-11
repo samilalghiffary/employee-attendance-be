@@ -222,4 +222,24 @@ describe('Attendance Module (e2e)', () => {
       }
     });
   });
+
+  describe('POST /api/admin/attendance/sync-absent', () => {
+    it('should deny regular employee with 403 Forbidden', async () => {
+      await request(app.getHttpServer())
+        .post('/api/admin/attendance/sync-absent')
+        .set('Authorization', `Bearer ${employeeToken}`)
+        .expect(403);
+    });
+
+    it('should allow admin to trigger sync-absent with 200 OK', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/admin/attendance/sync-absent?date=2026-10-01')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toHaveProperty('count');
+      expect(res.body.data.date).toBe('2026-10-01');
+    });
+  });
 });

@@ -24,6 +24,12 @@ export class AttendanceSummaryMetricsDto {
   totalLeave!: number;
 
   /**
+   * Total unexcused absence (alpa) records
+   * @example 1
+   */
+  totalAbsent!: number;
+
+  /**
    * Overall attendance percentage
    * @example 92.0%
    */
