@@ -2,6 +2,7 @@ node_modules/
 dist/
 .env
 
+AGENTS.md
 .agents/
 skills-lock.json
 
