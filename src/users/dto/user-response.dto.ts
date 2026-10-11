@@ -1,0 +1,86 @@
+import {
+  PaginationMetaDto,
+  type PaginatedResult,
+} from '../../common/dto/pagination.dto.js';
+import { UserRole } from '../../common/enums/role.enum.js';
+
+export class UserItemDto {
+  /**
+   * Unique user ID
+   * @example 6059da3b-67a2-4920-8f6c-5dc1c93abbe5
+   */
+  id!: string;
+
+  /**
+   * User email address
+   * @example budi@company.com
+   */
+  email!: string;
+
+  /**
+   * User full name
+   * @example Budi Santoso
+   */
+  name!: string;
+
+  /**
+   * User role
+   * @example EMPLOYEE
+   */
+  role!: UserRole;
+
+  /**
+   * Account active state
+   * @example true
+   */
+  isActive!: boolean;
+
+  /**
+   * Account creation timestamp
+   * @example 2026-10-11T03:00:00.000Z
+   */
+  createdAt!: string;
+
+  /**
+   * Account last update timestamp
+   * @example 2026-10-11T03:00:00.000Z
+   */
+  updatedAt!: string;
+}
+
+export class UserResponseDto {
+  /**
+   * Operation success indicator
+   * @example true
+   */
+  success!: boolean;
+
+  /**
+   * Operation feedback message
+   * @example User profile retrieved successfully
+   */
+  message!: string;
+
+  /**
+   * User details
+   */
+  data!: UserItemDto;
+}
+
+export class PaginatedUserResponseDto implements PaginatedResult<UserItemDto> {
+  /**
+   * Operation success indicator
+   * @example true
+   */
+  success!: boolean;
+
+  /**
+   * List of users
+   */
+  data!: UserItemDto[];
+
+  /**
+   * Pagination metadata
+   */
+  meta!: PaginationMetaDto;
+}

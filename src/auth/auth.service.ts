@@ -69,6 +69,12 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
+    if (user.isActive === false) {
+      throw new UnauthorizedException(
+        'Account is inactive. Please contact administrator.',
+      );
+    }
+
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid email or password');

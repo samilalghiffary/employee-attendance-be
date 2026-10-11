@@ -14,6 +14,7 @@ import { ApiDoc } from '../common/decorators/api-doc.decorator.js';
 import { UserRole } from '../common/enums/role.enum.js';
 import { AttendanceService } from './attendance.service.js';
 import { PaginatedAttendanceResponseDto } from './dto/attendance-response.dto.js';
+import { AttendanceSummaryResponseDto } from './dto/attendance-summary.dto.js';
 import { QueryAdminAttendanceDto } from './dto/query-attendance.dto.js';
 
 @ApiTags('Admin Attendance')
@@ -39,5 +40,23 @@ export class AttendanceAdminController {
     @Query() query: QueryAdminAttendanceDto,
   ): Promise<PaginatedAttendanceResponseDto> {
     return this.attendanceService.getAdminOverview(query);
+  }
+
+  @Get('summary')
+  @HttpCode(HttpStatus.OK)
+  @ApiDoc({
+    summary: 'Get attendance metrics summary (Admin)',
+    description:
+      'Aggregates attendance metrics including total present, late, and overall attendance rate.',
+    status: HttpStatus.OK,
+    responseType: AttendanceSummaryResponseDto,
+    responseDescription: 'Summary metrics retrieved successfully',
+    isAuth: true,
+  })
+  async getSummary(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ): Promise<AttendanceSummaryResponseDto> {
+    return this.attendanceService.getSummary({ startDate, endDate });
   }
 }

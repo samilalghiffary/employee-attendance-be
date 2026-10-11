@@ -212,6 +212,52 @@ export class AttendanceService {
     );
   }
 
+  async getSummary(query: { startDate?: string; endDate?: string }) {
+    const allUsers = await this.prisma.client.orm.public.User.all();
+    const activeEmployees = allUsers.filter(
+      (u) => u.role === 'EMPLOYEE' && u.isActive,
+    );
+
+    const allAttendances = await this.prisma.client.orm.public.Attendance.all();
+
+    let filtered = allAttendances;
+    if (query.startDate) {
+      filtered = filtered.filter((a) => a.date >= query.startDate!);
+    }
+    if (query.endDate) {
+      filtered = filtered.filter((a) => a.date <= query.endDate!);
+    }
+
+    const totalPresent = filtered.filter(
+      (a) => a.status === AttendanceStatus.PRESENT,
+    ).length;
+    const totalLate = filtered.filter(
+      (a) => a.status === AttendanceStatus.LATE,
+    ).length;
+    const totalLeave = filtered.filter(
+      (a) => a.status === AttendanceStatus.LEAVE,
+    ).length;
+
+    const totalExpected = activeEmployees.length;
+    const attendedCount = totalPresent + totalLate;
+    const ratePercent =
+      totalExpected > 0
+        ? ((attendedCount / totalExpected) * 100).toFixed(1) + '%'
+        : '0.0%';
+
+    return {
+      success: true,
+      message: 'Attendance summary retrieved successfully',
+      data: {
+        totalEmployees: activeEmployees.length,
+        totalPresent,
+        totalLate,
+        totalLeave,
+        attendanceRate: ratePercent,
+      },
+    };
+  }
+
   private mapToItemDto(record: any): AttendanceItemDto {
     return {
       id: record.id,
