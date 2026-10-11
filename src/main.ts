@@ -44,6 +44,14 @@ async function bootstrap() {
       'Admin Users',
       'Administrative user lifecycle management, RBAC, and directory listing',
     )
+    .addTag(
+      'Settings',
+      'Company policy and work schedule information for employee view',
+    )
+    .addTag(
+      'Admin Settings',
+      'Super administrative work schedule, grace period, and company policy configuration',
+    )
     .addBearerAuth(
       {
         type: 'http',

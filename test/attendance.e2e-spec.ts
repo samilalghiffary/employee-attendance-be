@@ -114,6 +114,7 @@ describe('Attendance Module (e2e)', () => {
       expect(res.body.data.checkIn).toBeDefined();
       expect(res.body.data.checkInLat).toBe(-6.2088);
       expect(res.body.data.checkInLng).toBe(106.8456);
+      expect(res.body.data.lateMinutes).toBeDefined();
       expect(res.body.data.notes).toBe('First check-in today');
     });
 

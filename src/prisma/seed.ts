@@ -46,6 +46,28 @@ async function seed() {
     console.log(`ℹ️ Employee user already exists: ${existingEmployee.email}`);
   }
 
+  // 3. Seed Default SystemSetting (Work Schedule)
+  const defaultScheduleKey = 'DEFAULT_SCHEDULE';
+  const existingSetting = await db.orm.public.SystemSetting.where({
+    key: defaultScheduleKey,
+  }).first();
+
+  if (!existingSetting) {
+    const setting = await db.orm.public.SystemSetting.create({
+      key: defaultScheduleKey,
+      workStartTime: '08:00',
+      workEndTime: '17:00',
+      lateToleranceMinutes: 15,
+    });
+    console.log(
+      `✅ Default Work Schedule seeded: ${setting.workStartTime} - ${setting.workEndTime} (Grace: ${setting.lateToleranceMinutes}m)`,
+    );
+  } else {
+    console.log(
+      `ℹ️ Work Schedule setting already exists: ${existingSetting.key}`,
+    );
+  }
+
   console.log('🎉 Seeding completed successfully!');
 }
 

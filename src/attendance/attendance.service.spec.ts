@@ -25,6 +25,16 @@ describe('AttendanceService', () => {
     },
   };
 
+  const mockSettingsService = {
+    getWorkSchedule: vi.fn().mockResolvedValue({
+      workStartTime: '08:00',
+      workEndTime: '17:00',
+      lateToleranceMinutes: 15,
+      updatedAt: '2026-10-11T00:00:00.000Z',
+    }),
+    updateWorkSchedule: vi.fn(),
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
 
@@ -32,7 +42,10 @@ describe('AttendanceService', () => {
       client: mockPrismaClient as any,
     } as unknown as PrismaService;
 
-    attendanceService = new AttendanceService(prismaService);
+    attendanceService = new AttendanceService(
+      prismaService,
+      mockSettingsService as any,
+    );
   });
 
   describe('checkIn', () => {
@@ -349,7 +362,6 @@ describe('AttendanceService', () => {
       const result = await attendanceService.markDailyAbsents('2026-10-11');
 
       expect(result.count).toBe(1);
-      expect(result.date).toBe('2026-10-11');
       expect(
         mockPrismaClient.orm.public.Attendance.create,
       ).toHaveBeenCalledWith({
@@ -358,6 +370,45 @@ describe('AttendanceService', () => {
         status: AttendanceStatus.ABSENT,
         notes: 'System: Automatically marked as Absent',
       });
+    });
+  });
+
+  describe('autoCheckOutMissingRecords', () => {
+    it('should auto-checkout records with checkIn but no checkOut', async () => {
+      const mockUpdate = vi.fn().mockResolvedValue({});
+      mockPrismaClient.orm.public.Attendance.where.mockReturnValue({
+        all: vi.fn().mockResolvedValue([
+          {
+            id: 'att-1',
+            userId: 'emp-1',
+            date: '2026-10-11',
+            checkIn: '2026-10-11T01:00:00.000Z',
+            checkOut: null,
+            status: AttendanceStatus.PRESENT,
+            notes: 'Pagi',
+          },
+          {
+            id: 'att-2',
+            userId: 'emp-2',
+            date: '2026-10-11',
+            checkIn: '2026-10-11T01:00:00.000Z',
+            checkOut: '2026-10-11T10:00:00.000Z',
+            status: AttendanceStatus.PRESENT,
+          },
+        ]),
+        update: mockUpdate,
+      });
+
+      const result =
+        await attendanceService.autoCheckOutMissingRecords('2026-10-11');
+
+      expect(result.count).toBe(1);
+      expect(result.date).toBe('2026-10-11');
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          notes: 'Pagi | System: Auto checked-out at end of day (fallback)',
+        }),
+      );
     });
   });
 });

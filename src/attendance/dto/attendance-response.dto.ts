@@ -1,4 +1,5 @@
 import { AttendanceStatus } from '../../common/enums/attendance-status.enum.js';
+import { calculateLateArrival } from '../../common/utils/date.util.js';
 
 export class AttendanceItemDto {
   /**
@@ -74,6 +75,12 @@ export class AttendanceItemDto {
   createdAt!: string;
 
   /**
+   * Minutes late if arrival exceeded grace period (0 if on time or not late)
+   * @example 25
+   */
+  lateMinutes!: number;
+
+  /**
    * Employee user profile details
    */
   user?: {
@@ -82,7 +89,22 @@ export class AttendanceItemDto {
     email: string;
   };
 
-  static fromEntity(record: any): AttendanceItemDto {
+  static fromEntity(
+    record: any,
+    workStartTime: string = '08:00',
+    lateToleranceMinutes: number = 15,
+  ): AttendanceItemDto {
+    let lateMinutes = 0;
+    if (record.status === AttendanceStatus.LATE && record.checkIn) {
+      const checkInDate = new Date(record.checkIn);
+      const { lateMinutes: computedMinutes } = calculateLateArrival(
+        checkInDate,
+        workStartTime,
+        lateToleranceMinutes,
+      );
+      lateMinutes = computedMinutes;
+    }
+
     return {
       id: record.id,
       userId: record.userId,
@@ -98,6 +120,7 @@ export class AttendanceItemDto {
       status: record.status as AttendanceStatus,
       notes: record.notes ?? null,
       createdAt: record.createdAt,
+      lateMinutes,
       user: record.user
         ? {
             id: record.user.id,

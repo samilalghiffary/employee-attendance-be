@@ -8,14 +8,16 @@ import { Cron } from '@nestjs/schedule';
 import { AttendanceStatus } from '../common/enums/attendance-status.enum.js';
 import { UserRole } from '../common/enums/role.enum.js';
 import {
+  calculateLateArrival,
+  createWorkEndTimestamp,
   getLocalDateString,
-  isAfterThresholdTime,
 } from '../common/utils/date.util.js';
 import {
   createPaginatedResponse,
   getPaginationParams,
 } from '../common/utils/pagination.util.js';
 import { PrismaService } from '../prisma.service.js';
+import { SettingsService } from '../settings/settings.service.js';
 import {
   AttendanceItemDto,
   type AttendanceResponseDto,
@@ -32,10 +34,11 @@ import type {
 @Injectable()
 export class AttendanceService {
   private readonly logger = new Logger(AttendanceService.name);
-  private readonly LATE_THRESHOLD_HOUR = 9;
-  private readonly LATE_THRESHOLD_MINUTE = 0;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly settingsService: SettingsService,
+  ) {}
 
   async checkIn(
     userId: string,
@@ -69,13 +72,14 @@ export class AttendanceService {
       throw new ConflictException('You have already checked in for today.');
     }
 
-    const status = isAfterThresholdTime(
+    const schedule = await this.settingsService.getWorkSchedule();
+    const { isLate, lateMinutes } = calculateLateArrival(
       now,
-      this.LATE_THRESHOLD_HOUR,
-      this.LATE_THRESHOLD_MINUTE,
-    )
-      ? AttendanceStatus.LATE
-      : AttendanceStatus.PRESENT;
+      schedule.workStartTime,
+      schedule.lateToleranceMinutes,
+    );
+
+    const status = isLate ? AttendanceStatus.LATE : AttendanceStatus.PRESENT;
 
     const record = await this.prisma.client.orm.public.Attendance.create({
       userId,
@@ -87,13 +91,19 @@ export class AttendanceService {
       notes: dto.notes ?? null,
     });
 
+    const successMessage =
+      status === AttendanceStatus.LATE
+        ? `Check-in recorded successfully (Late by ${lateMinutes} minutes).`
+        : 'Check-in recorded successfully (On Time).';
+
     return {
       success: true,
-      message:
-        status === AttendanceStatus.LATE
-          ? 'Check-in recorded successfully (Late).'
-          : 'Check-in recorded successfully (On Time).',
-      data: AttendanceItemDto.fromEntity(record),
+      message: successMessage,
+      data: AttendanceItemDto.fromEntity(
+        record,
+        schedule.workStartTime,
+        schedule.lateToleranceMinutes,
+      ),
     };
   }
 
@@ -311,12 +321,61 @@ export class AttendanceService {
   async handleDailyAbsentCron(): Promise<void> {
     const todayStr = getLocalDateString(new Date());
     this.logger.log(
-      `[Cron] Running automated absent check for date: ${todayStr}`,
+      `[Cron] Running end-of-day attendance procedures for date: ${todayStr}`,
     );
+
+    const autoCheckedOut = await this.autoCheckOutMissingRecords(todayStr);
+    this.logger.log(
+      `[Cron] Successfully auto checked-out ${autoCheckedOut.count} employee(s) for ${todayStr}.`,
+    );
+
     const marked = await this.markDailyAbsents(todayStr);
     this.logger.log(
       `[Cron] Successfully marked ${marked.count} employee(s) as ABSENT for ${todayStr}.`,
     );
+  }
+
+  async autoCheckOutMissingRecords(
+    targetDate?: string,
+  ): Promise<{ count: number; date: string }> {
+    const dateStr = targetDate ?? getLocalDateString(new Date());
+    const schedule = await this.settingsService.getWorkSchedule();
+    const fallbackCheckOutTime = createWorkEndTimestamp(
+      dateStr,
+      schedule.workEndTime,
+    );
+
+    const recordsNeedingCheckOut =
+      await this.prisma.client.orm.public.Attendance.where({
+        date: dateStr,
+      }).all();
+
+    const missingCheckOut = recordsNeedingCheckOut.filter(
+      (a) =>
+        a.checkIn != null &&
+        a.checkOut == null &&
+        a.status !== AttendanceStatus.ABSENT,
+    );
+
+    let count = 0;
+    for (const record of missingCheckOut) {
+      const autoNote = record.notes
+        ? `${record.notes} | System: Auto checked-out at end of day (fallback)`
+        : 'System: Auto checked-out at end of day (fallback)';
+
+      await this.prisma.client.orm.public.Attendance.where({
+        id: record.id,
+      }).update({
+        checkOut: fallbackCheckOutTime,
+        notes: autoNote,
+      });
+      count++;
+    }
+
+    return {
+      count,
+      date: dateStr,
+    };
   }
 
   async markDailyAbsents(

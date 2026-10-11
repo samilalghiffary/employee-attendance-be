@@ -45,3 +45,13 @@ model Attendance {
   @@index([userId])
   @@index([date])
 }
+
+model SystemSetting {
+  id                   String            @id @default(uuid())
+  key                  String            @unique @default("DEFAULT_SCHEDULE")
+  workStartTime        String            @default("08:00")
+  workEndTime          String            @default("17:00")
+  lateToleranceMinutes Int               @default(15)
+  createdAt            TimestamptzString @default(now())
+  updatedAt            temporal.updatedAtString()
+}

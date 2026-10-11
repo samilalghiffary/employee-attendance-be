@@ -8,6 +8,10 @@
       "model": "Attendance",
       "namespace": "public"
     },
+    "SystemSetting": {
+      "model": "SystemSetting",
+      "namespace": "public"
+    },
     "User": {
       "model": "User",
       "namespace": "public"
@@ -215,6 +219,87 @@
               },
               "namespaceId": "public",
               "table": "Attendance"
+            }
+          },
+          "SystemSetting": {
+            "fields": {
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "key": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "lateToleranceMinutes": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "workEndTime": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "workStartTime": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {},
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "key": {
+                  "column": "key"
+                },
+                "lateToleranceMinutes": {
+                  "column": "lateToleranceMinutes"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                },
+                "workEndTime": {
+                  "column": "workEndTime"
+                },
+                "workStartTime": {
+                  "column": "workStartTime"
+                }
+              },
+              "namespaceId": "public",
+              "table": "SystemSetting"
             }
           },
           "User": {
@@ -479,6 +564,79 @@
                 }
               ]
             },
+            "SystemSetting": {
+              "columns": {
+                "createdAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "key": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": "DEFAULT_SCHEDULE"
+                  },
+                  "nullable": false
+                },
+                "lateToleranceMinutes": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "default": {
+                    "kind": "literal",
+                    "value": 15
+                  },
+                  "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": false
+                },
+                "workEndTime": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": "17:00"
+                  },
+                  "nullable": false
+                },
+                "workStartTime": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": "08:00"
+                  },
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "key"
+                  ]
+                }
+              ]
+            },
             "User": {
               "checks": [
                 {
@@ -586,10 +744,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "f452bb79db14428d0b70770d68bbeab88c3603823893055245a7dd13b77af46f"
+    "storageHash": "ea76fac2f166f1086ee082580cbd53c7cd885d55972aa085d44b71ac52c6ad74"
   },
   "execution": {
-    "executionHash": "04f90742eb16e51ce12263ff22e9ea89783d6ba3c711712711d2d64f2ea08e32",
+    "executionHash": "4615869380da8de24f12af71c813635e68103a01b3ab22c381578d8636665ed2",
     "mutations": {
       "defaults": [
         {
@@ -614,6 +772,32 @@
           },
           "ref": {
             "entry": "Attendance",
+            "field": "updatedAt",
+            "namespace": "public"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "entry": "SystemSetting",
+            "field": "id",
+            "namespace": "public"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "entry": "SystemSetting",
             "field": "updatedAt",
             "namespace": "public"
           }
