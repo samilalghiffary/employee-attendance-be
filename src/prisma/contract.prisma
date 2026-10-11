@@ -19,6 +19,7 @@ model User {
   name        String
   password    String
   role        Role                       @default(EMPLOYEE)
+  isActive    Boolean                    @default(true)
   attendances Attendance[]
   createdAt   TimestamptzString          @default(now())
   updatedAt   temporal.updatedAtString()
