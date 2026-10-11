@@ -213,7 +213,7 @@ export class AttendanceService {
     const paginated = filtered.slice(offset, offset + limit);
 
     return createPaginatedResponse(
-      paginated.map(AttendanceItemDto.fromEntity),
+      paginated.map((item) => AttendanceItemDto.fromEntity(item)),
       total,
       page,
       limit,
@@ -250,7 +250,7 @@ export class AttendanceService {
     const paginated = filtered.slice(offset, offset + limit);
 
     return createPaginatedResponse(
-      paginated.map(AttendanceItemDto.fromEntity),
+      paginated.map((item) => AttendanceItemDto.fromEntity(item)),
       total,
       page,
       limit,

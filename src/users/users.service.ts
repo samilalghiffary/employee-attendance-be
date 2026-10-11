@@ -280,7 +280,7 @@ export class UsersService {
     const paginated = filtered.slice(offset, offset + limit);
 
     return createPaginatedResponse(
-      paginated.map(UserItemDto.fromEntity),
+      paginated.map((item) => UserItemDto.fromEntity(item)),
       total,
       page,
       limit,

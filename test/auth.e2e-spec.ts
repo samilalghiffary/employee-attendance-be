@@ -7,7 +7,6 @@ import { AppModule } from '../src/app.module.js';
 
 describe('Auth Module (e2e)', () => {
   let app: INestApplication<App>;
-  let employeeAccessToken = '';
   const testEmail = `test.e2e.${Date.now()}@company.com`;
 
   beforeAll(async () => {
@@ -116,8 +115,6 @@ describe('Auth Module (e2e)', () => {
       expect(res.body).toHaveProperty('accessToken');
       expect(res.body.tokenType).toBe('Bearer');
       expect(res.body.user.email).toBe(testEmail);
-
-      employeeAccessToken = res.body.accessToken;
     });
 
     it('should return 401 Unauthorized when password is wrong', async () => {
@@ -145,4 +142,3 @@ describe('Auth Module (e2e)', () => {
     });
   });
 });
-
