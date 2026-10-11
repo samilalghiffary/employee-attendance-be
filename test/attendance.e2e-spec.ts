@@ -85,6 +85,8 @@ describe('Attendance Module (e2e)', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.hasCheckedIn).toBe(false);
       expect(res.body.hasCheckedOut).toBe(false);
+      expect(res.body.isAbsent).toBe(false);
+      expect(res.body.canCheckIn).toBe(true);
       expect(res.body.data).toBeNull();
     });
 
@@ -223,23 +225,35 @@ describe('Attendance Module (e2e)', () => {
     });
   });
 
-  describe('POST /api/admin/attendance/sync-absent', () => {
+  describe('GET /api/admin/attendance/summary', () => {
     it('should deny regular employee with 403 Forbidden', async () => {
       await request(app.getHttpServer())
-        .post('/api/admin/attendance/sync-absent')
+        .get('/api/admin/attendance/summary')
         .set('Authorization', `Bearer ${employeeToken}`)
         .expect(403);
     });
 
-    it('should allow admin to trigger sync-absent with 200 OK', async () => {
+    it('should allow admin to retrieve summary metrics with optional date filters (200)', async () => {
       const res = await request(app.getHttpServer())
-        .post('/api/admin/attendance/sync-absent?date=2026-10-01')
+        .get(
+          '/api/admin/attendance/summary?startDate=2026-10-01&endDate=2026-10-31',
+        )
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
       expect(res.body.success).toBe(true);
-      expect(res.body.data).toHaveProperty('count');
-      expect(res.body.data.date).toBe('2026-10-01');
+      expect(res.body.data).toHaveProperty('totalEmployees');
+      expect(res.body.data).toHaveProperty('totalPresent');
+      expect(res.body.data).toHaveProperty('totalLate');
+      expect(res.body.data).toHaveProperty('totalAbsent');
+      expect(res.body.data).toHaveProperty('attendanceRate');
+    });
+
+    it('should reject invalid date string query with 400 Bad Request', async () => {
+      await request(app.getHttpServer())
+        .get('/api/admin/attendance/summary?startDate=invalid-date')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(400);
     });
   });
 });

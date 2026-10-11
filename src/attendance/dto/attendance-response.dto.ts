@@ -148,6 +148,18 @@ export class TodayAttendanceResponseDto {
   hasCheckedOut!: boolean;
 
   /**
+   * Whether employee has been marked as absent for today
+   * @example false
+   */
+  isAbsent!: boolean;
+
+  /**
+   * Convenient UI flag indicating if employee is currently eligible to check-in
+   * @example false
+   */
+  canCheckIn!: boolean;
+
+  /**
    * Today's attendance details (null if not checked in)
    */
   data!: AttendanceItemDto | null;

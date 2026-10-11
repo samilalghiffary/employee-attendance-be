@@ -61,6 +61,11 @@ export class AttendanceService {
     }).first();
 
     if (existing) {
+      if (existing.status === AttendanceStatus.ABSENT) {
+        throw new ConflictException(
+          'Attendance for today has already been closed as Absent.',
+        );
+      }
       throw new ConflictException('You have already checked in for today.');
     }
 
@@ -160,14 +165,23 @@ export class AttendanceService {
         success: true,
         hasCheckedIn: false,
         hasCheckedOut: false,
+        isAbsent: false,
+        canCheckIn: true,
         data: null,
       };
     }
 
+    const hasCheckedIn = !!record.checkIn;
+    const hasCheckedOut = !!record.checkOut;
+    const isAbsent = record.status === AttendanceStatus.ABSENT;
+    const canCheckIn = !hasCheckedIn && !isAbsent;
+
     return {
       success: true,
-      hasCheckedIn: !!record.checkIn,
-      hasCheckedOut: !!record.checkOut,
+      hasCheckedIn,
+      hasCheckedOut,
+      isAbsent,
+      canCheckIn,
       data: AttendanceItemDto.fromEntity(record),
     };
   }

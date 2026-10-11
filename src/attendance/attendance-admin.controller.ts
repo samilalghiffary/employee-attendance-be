@@ -3,7 +3,6 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -16,6 +15,7 @@ import { UserRole } from '../common/enums/role.enum.js';
 import { AttendanceService } from './attendance.service.js';
 import { PaginatedAttendanceResponseDto } from './dto/attendance-response.dto.js';
 import { AttendanceSummaryResponseDto } from './dto/attendance-summary.dto.js';
+import { QueryAttendanceSummaryDto } from './dto/query-attendance-summary.dto.js';
 import { QueryAdminAttendanceDto } from './dto/query-attendance.dto.js';
 
 @ApiTags('Admin Attendance')
@@ -48,41 +48,15 @@ export class AttendanceAdminController {
   @ApiDoc({
     summary: 'Get attendance metrics summary (Admin)',
     description:
-      'Aggregates attendance metrics including total present, late, and overall attendance rate.',
+      'Aggregates attendance metrics including total present, late, absent, and overall attendance rate.',
     status: HttpStatus.OK,
     responseType: AttendanceSummaryResponseDto,
     responseDescription: 'Summary metrics retrieved successfully',
     isAuth: true,
   })
   async getSummary(
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
+    @Query() query: QueryAttendanceSummaryDto,
   ): Promise<AttendanceSummaryResponseDto> {
-    return this.attendanceService.getSummary({ startDate, endDate });
-  }
-
-  @Post('sync-absent')
-  @HttpCode(HttpStatus.OK)
-  @ApiDoc({
-    summary: 'Trigger automated absent marking (Admin)',
-    description:
-      'Scans active employees without attendance for a given date (defaults to today) and marks them as ABSENT.',
-    status: HttpStatus.OK,
-    responseDescription: 'Absent sync executed successfully',
-    isAuth: true,
-  })
-  async syncAbsent(
-    @Query('date') date?: string,
-  ): Promise<{
-    success: boolean;
-    message: string;
-    data: { count: number; date: string };
-  }> {
-    const result = await this.attendanceService.markDailyAbsents(date);
-    return {
-      success: true,
-      message: `Successfully processed absent records for ${result.date}`,
-      data: result,
-    };
+    return this.attendanceService.getSummary(query);
   }
 }

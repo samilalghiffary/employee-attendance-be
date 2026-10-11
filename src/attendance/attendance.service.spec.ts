@@ -71,6 +71,8 @@ describe('AttendanceService', () => {
           id: 'attendance-1',
           userId,
           date: '2026-10-11',
+          checkIn: '2026-10-11T01:30:00.000Z',
+          status: AttendanceStatus.PRESENT,
         }),
       });
 
@@ -80,7 +82,26 @@ describe('AttendanceService', () => {
           latitude: -6.2,
           longitude: 106.8,
         }),
-      ).rejects.toThrow(ConflictException);
+      ).rejects.toThrow('already checked in');
+    });
+
+    it('should throw specific ConflictException if attendance is already closed as Absent', async () => {
+      mockPrismaClient.orm.public.Attendance.where.mockReturnValue({
+        first: vi.fn().mockResolvedValue({
+          id: 'attendance-absent',
+          userId,
+          date: '2026-10-11',
+          status: AttendanceStatus.ABSENT,
+        }),
+      });
+
+      await expect(
+        attendanceService.checkIn(userId, {
+          notes: 'Datang telat banget',
+          latitude: -6.2,
+          longitude: 106.8,
+        }),
+      ).rejects.toThrow('closed as Absent');
     });
   });
 
@@ -168,6 +189,8 @@ describe('AttendanceService', () => {
       expect(result.success).toBe(true);
       expect(result.hasCheckedIn).toBe(false);
       expect(result.hasCheckedOut).toBe(false);
+      expect(result.isAbsent).toBe(false);
+      expect(result.canCheckIn).toBe(true);
       expect(result.data).toBeNull();
     });
 
@@ -187,7 +210,30 @@ describe('AttendanceService', () => {
 
       expect(result.hasCheckedIn).toBe(true);
       expect(result.hasCheckedOut).toBe(false);
+      expect(result.isAbsent).toBe(false);
+      expect(result.canCheckIn).toBe(false);
       expect(result.data?.id).toBe('attendance-1');
+    });
+
+    it('should return isAbsent true and canCheckIn false when marked as ABSENT', async () => {
+      mockPrismaClient.orm.public.Attendance.where.mockReturnValue({
+        first: vi.fn().mockResolvedValue({
+          id: 'attendance-absent',
+          userId,
+          date: '2026-10-11',
+          checkIn: null,
+          checkOut: null,
+          status: AttendanceStatus.ABSENT,
+        }),
+      });
+
+      const result = await attendanceService.getTodayStatus(userId);
+
+      expect(result.hasCheckedIn).toBe(false);
+      expect(result.hasCheckedOut).toBe(false);
+      expect(result.isAbsent).toBe(true);
+      expect(result.canCheckIn).toBe(false);
+      expect(result.data?.status).toBe(AttendanceStatus.ABSENT);
     });
   });
 
