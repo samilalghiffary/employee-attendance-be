@@ -1,124 +1,163 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Employee Attendance API (Backend)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+REST API backend for the **Employee Attendance Management System**, built with **NestJS**, **Prisma ORM**, **PostgreSQL**, and **TypeScript**.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+This repository provides full-featured APIs for user authentication (RBAC), employee geolocation-based attendance tracking, profile management, attendance history, and dynamic administrative work schedule configuration.
 
-## Description
+---
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 🚀 Tech Stack
 
-## Project setup
+- **Framework:** [NestJS](https://nestjs.com/) (Modular Architecture)
+- **Database ORM:** [Prisma ORM](https://www.prisma.io/)
+- **Database:** PostgreSQL (>= 15)
+- **Authentication:** JWT (JSON Web Tokens) with Passport & Bcrypt
+- **API Documentation:** [Swagger / OpenAPI](https://swagger.io/)
+- **Testing:** [Vitest](https://vitest.dev/) (Unit & E2E Testing)
+- **Linter & Formatter:** [Oxlint](https://oxc.rs/) & [Prettier](https://prettier.io/)
 
-```bash
-$ npm install
+---
+
+## 📌 Key Features
+
+- 🔐 **Authentication & RBAC:**
+  - Secure login and registration with password hashing (`bcrypt`).
+  - Role-Based Access Control (`ADMIN` & `EMPLOYEE`).
+- 📍 **Employee Attendance Tracking:**
+  - Self-service check-in & check-out with GPS geolocation recording (`latitude` & `longitude`).
+  - Automated status evaluation (`PRESENT`, `LATE`, `ABSENT`, `LEAVE`) based on company late tolerance limits.
+  - Comprehensive attendance logs and history (daily, monthly, yearly).
+- 👥 **User Management (Admin):**
+  - Employee user lifecycle management (CRUD), account status toggle (`isActive`), and role assignments.
+- ⚙️ **Work Schedule & System Settings:**
+  - Dynamically configurable schedule policies: work start time (`workStartTime`), work end time (`workEndTime`), and late tolerance window (`lateToleranceMinutes`).
+- 📖 **Interactive Swagger Documentation:**
+  - Interactive API playground at `/api/docs` with Bearer token authentication support.
+
+---
+
+## 📁 Directory Structure
+
+```text
+backend/
+├── src/
+│   ├── attendance/         # Attendance module (Check-in, Check-out, History)
+│   ├── auth/               # Auth module (JWT strategy, guards, roles)
+│   ├── common/             # Decorators, filters, interceptors, & utilities
+│   ├── health/             # Health check endpoint
+│   ├── prisma/             # Prisma contract schema, client, & database seed
+│   ├── settings/           # Work schedule & company policy configuration
+│   ├── users/              # User profile & administrative management
+│   ├── app.module.ts       # Root application module
+│   └── main.ts             # Application entry point, global pipes, prefix, & Swagger setup
+├── test/                   # Vitest E2E integration test suite
+├── .env.example            # Environment variables template
+├── package.json
+└── tsconfig.json
 ```
 
-## Compile and run the project
+---
 
+## 🛠️ Installation & Setup
+
+### 1. Prerequisites
+- **Node.js** (v20+ recommended)
+- **PostgreSQL** (v15+)
+
+### 2. Clone Repository
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+git clone https://github.com/samilalghiffary/employee-attendance-be.git
+cd employee-attendance-be
 ```
 
-## Run tests
-
+### 3. Install Dependencies
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm install
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
+### 4. Configure Environment Variables (`.env`)
+Copy the `.env.example` file to `.env`:
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+cp .env.example .env
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Observability
-
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
-
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
-
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
-
-To add it to this project:
-
-```bash
-$ npm install @nestjs/observe
+Update the configuration variables in `.env`:
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/employee_attendance?schema=public"
+JWT_SECRET="your-secure-jwt-secret-key"
+JWT_EXPIRES_IN="1d"
+PORT=3001
 ```
 
-Then follow the [setup guide](https://docs.nestjs.com/observability/overview) - it takes a single import and an app key.
+### 5. Database Sync & Seeding
+Emit the Prisma contract and seed the database with initial Admin credentials and settings:
+```bash
+# Emit Prisma contract
+npm run contract:emit
 
-The free plan needs no payment details and covers 300,000 events a month. You can also browse the [live demo](https://www.observe-demo.nestjs.com/dashboard) first - the whole dashboard over a busy service's data, with nothing to install.
+# Seed the initial database records
+npm run db:seed
+```
 
-## Resources
+### 6. Run the Application
 
-Check out a few resources that may come in handy when working with NestJS:
+```bash
+# Development (watch mode)
+npm run start:dev
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observe](https://observe.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+# Production build & run
+npm run build
+npm run start:prod
+```
 
-## Support
+Once running:
+- **API Base URL:** `http://localhost:3001/api`
+- **Swagger Documentation:** `http://localhost:3001/api/docs`
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+---
 
-## Stay in touch
+## 🧪 Testing & Linting
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```bash
+# Run unit tests
+npm run test
 
-## License
+# Run E2E integration tests
+npm run test:e2e
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+# Run test coverage
+npm run test:cov
+
+# Lint code (Oxlint)
+npm run lint
+
+# Format code (Prettier)
+npm run format
+```
+
+---
+
+## 📑 Core API Endpoints
+
+| Method | Endpoint | Access / Role | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/health` | Public | Application & database connection health check |
+| `POST` | `/api/auth/register` | Public | Register a new user account |
+| `POST` | `/api/auth/login` | Public | Authenticate and obtain JWT Bearer token |
+| `GET` | `/api/users/profile` | Authenticated | Retrieve current user profile |
+| `POST` | `/api/attendance/check-in` | Employee / Admin | Record daily check-in with geolocation |
+| `POST` | `/api/attendance/check-out` | Employee / Admin | Record daily check-out with geolocation |
+| `GET` | `/api/attendance/history` | Employee / Admin | Retrieve personal attendance history |
+| `GET` | `/api/admin/attendance` | Admin | View company-wide attendance logs & metrics |
+| `GET` | `/api/admin/users` | Admin | List and manage all employees |
+| `PATCH` | `/api/admin/users/:id/status`| Admin | Update employee active status (`isActive`) |
+| `GET` | `/api/settings` | Authenticated | View current work schedule & policies |
+| `PATCH` | `/api/admin/settings` | Admin | Update system work schedule and tolerances |
+
+For full request/response schemas and interactive testing, visit **[Swagger UI](http://localhost:3001/api/docs)**.
+
+---
+
+## 📄 License
+
+UNLICENSED - Internal Project.
