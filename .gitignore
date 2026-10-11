@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .env
+coverage/
 
 AGENTS.md
 .agents/
