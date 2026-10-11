@@ -28,7 +28,20 @@ async function bootstrap() {
     .addTag('Health Check', 'Application and database connectivity status')
     .addTag(
       'Auth & RBAC',
-      'User registration, login, and profile authentication',
+      'User registration, login, and access authentication',
+    )
+    .addTag(
+      'Attendance',
+      'Employee self-service attendance tracking (check-in, check-out, history)',
+    )
+    .addTag('Users', 'Employee self-service profile and password management')
+    .addTag(
+      'Admin Attendance',
+      'Administrative attendance overview, filtering, and summary metrics',
+    )
+    .addTag(
+      'Admin Users',
+      'Administrative user lifecycle management, RBAC, and directory listing',
     )
     .addBearerAuth(
       {
