@@ -10,11 +10,11 @@ import {
 } from '../common/utils/date.util.js';
 import { createPaginatedResponse } from '../common/utils/pagination.util.js';
 import { PrismaService } from '../prisma.service.js';
-import type {
+import {
   AttendanceItemDto,
-  AttendanceResponseDto,
-  PaginatedAttendanceResponseDto,
-  TodayAttendanceResponseDto,
+  type AttendanceResponseDto,
+  type PaginatedAttendanceResponseDto,
+  type TodayAttendanceResponseDto,
 } from './dto/attendance-response.dto.js';
 import type { CheckInDto } from './dto/check-in.dto.js';
 import type { CheckOutDto } from './dto/check-out.dto.js';
@@ -68,7 +68,7 @@ export class AttendanceService {
         status === AttendanceStatus.LATE
           ? 'Check-in recorded successfully (Late).'
           : 'Check-in recorded successfully (On Time).',
-      data: this.mapToItemDto(record),
+      data: AttendanceItemDto.fromEntity(record),
     };
   }
 
@@ -110,7 +110,7 @@ export class AttendanceService {
     return {
       success: true,
       message: 'Check-out recorded successfully.',
-      data: this.mapToItemDto(updated),
+      data: AttendanceItemDto.fromEntity(updated),
     };
   }
 
@@ -135,7 +135,7 @@ export class AttendanceService {
       success: true,
       hasCheckedIn: !!record.checkIn,
       hasCheckedOut: !!record.checkOut,
-      data: this.mapToItemDto(record),
+      data: AttendanceItemDto.fromEntity(record),
     };
   }
 
@@ -168,7 +168,7 @@ export class AttendanceService {
     const paginated = filtered.slice(offset, offset + limit);
 
     return createPaginatedResponse(
-      paginated.map((item) => this.mapToItemDto(item)),
+      paginated.map(AttendanceItemDto.fromEntity),
       total,
       page,
       limit,
@@ -205,7 +205,7 @@ export class AttendanceService {
     const paginated = filtered.slice(offset, offset + limit);
 
     return createPaginatedResponse(
-      paginated.map((item) => this.mapToItemDto(item)),
+      paginated.map(AttendanceItemDto.fromEntity),
       total,
       page,
       limit,
@@ -255,19 +255,6 @@ export class AttendanceService {
         totalLeave,
         attendanceRate: ratePercent,
       },
-    };
-  }
-
-  private mapToItemDto(record: any): AttendanceItemDto {
-    return {
-      id: record.id,
-      userId: record.userId,
-      date: record.date,
-      checkIn: record.checkIn ?? null,
-      checkOut: record.checkOut ?? null,
-      status: record.status as AttendanceStatus,
-      notes: record.notes ?? null,
-      createdAt: record.createdAt,
     };
   }
 }

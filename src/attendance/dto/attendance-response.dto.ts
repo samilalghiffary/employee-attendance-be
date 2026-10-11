@@ -57,6 +57,19 @@ export class AttendanceItemDto {
     name: string;
     email: string;
   };
+
+  static fromEntity(record: any): AttendanceItemDto {
+    return {
+      id: record.id,
+      userId: record.userId,
+      date: record.date,
+      checkIn: record.checkIn ?? null,
+      checkOut: record.checkOut ?? null,
+      status: record.status as AttendanceStatus,
+      notes: record.notes ?? null,
+      createdAt: record.createdAt,
+    };
+  }
 }
 
 export class AttendanceResponseDto {

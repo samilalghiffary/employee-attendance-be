@@ -14,10 +14,10 @@ import type { CreateUserDto } from './dto/create-user.dto.js';
 import type { QueryUsersDto } from './dto/query-users.dto.js';
 import type { UpdateProfileDto } from './dto/update-profile.dto.js';
 import type { UpdateUserStatusDto } from './dto/update-user-status.dto.js';
-import type {
-  PaginatedUserResponseDto,
+import {
+  type PaginatedUserResponseDto,
   UserItemDto,
-  UserResponseDto,
+  type UserResponseDto,
 } from './dto/user-response.dto.js';
 
 @Injectable()
@@ -36,7 +36,7 @@ export class UsersService {
     return {
       success: true,
       message: 'User profile retrieved successfully',
-      data: this.mapToItemDto(user),
+      data: UserItemDto.fromEntity(user),
     };
   }
 
@@ -81,7 +81,7 @@ export class UsersService {
     return {
       success: true,
       message: 'Profile updated successfully',
-      data: this.mapToItemDto(updated),
+      data: UserItemDto.fromEntity(updated),
     };
   }
 
@@ -142,7 +142,7 @@ export class UsersService {
     return {
       success: true,
       message: 'User created successfully',
-      data: this.mapToItemDto(created),
+      data: UserItemDto.fromEntity(created),
     };
   }
 
@@ -158,7 +158,7 @@ export class UsersService {
     return {
       success: true,
       message: 'User retrieved successfully',
-      data: this.mapToItemDto(user),
+      data: UserItemDto.fromEntity(user),
     };
   }
 
@@ -190,7 +190,7 @@ export class UsersService {
     return {
       success: true,
       message: `User status successfully updated to ${dto.isActive ? 'active' : 'inactive'}`,
-      data: this.mapToItemDto(updated),
+      data: UserItemDto.fromEntity(updated),
     };
   }
 
@@ -243,7 +243,7 @@ export class UsersService {
     return {
       success: true,
       message: 'User details updated successfully',
-      data: this.mapToItemDto(updated),
+      data: UserItemDto.fromEntity(updated),
     };
   }
 
@@ -279,22 +279,10 @@ export class UsersService {
     const paginated = filtered.slice(offset, offset + limit);
 
     return createPaginatedResponse(
-      paginated.map((u) => this.mapToItemDto(u)),
+      paginated.map(UserItemDto.fromEntity),
       total,
       page,
       limit,
     );
-  }
-
-  private mapToItemDto(user: any): UserItemDto {
-    return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      isActive: user.isActive,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
   }
 }

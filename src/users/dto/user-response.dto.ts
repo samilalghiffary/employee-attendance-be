@@ -46,6 +46,18 @@ export class UserItemDto {
    * @example 2026-10-11T03:00:00.000Z
    */
   updatedAt!: string;
+
+  static fromEntity(user: any): UserItemDto {
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      isActive: user.isActive,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+  }
 }
 
 export class UserResponseDto {
