@@ -4,6 +4,7 @@ import request from 'supertest';
 import type { App } from 'supertest/types.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AppModule } from '../src/app.module.js';
+import { PrismaService } from '../src/prisma.service.js';
 
 describe('Auth Module (e2e)', () => {
   let app: INestApplication<App>;
@@ -27,6 +28,22 @@ describe('Auth Module (e2e)', () => {
   });
 
   afterAll(async () => {
+    try {
+      const prismaService = app.get(PrismaService);
+      const testUser = await prismaService.client.orm.public.User.where({
+        email: testEmail,
+      }).first();
+      if (testUser) {
+        await prismaService.client.orm.public.Attendance.where({
+          userId: testUser.id,
+        }).delete();
+        await prismaService.client.orm.public.User.where({
+          id: testUser.id,
+        }).delete();
+      }
+    } catch {
+      // ignore cleanup errors
+    }
     await app.close();
   });
 

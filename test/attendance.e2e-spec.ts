@@ -4,6 +4,7 @@ import request from 'supertest';
 import type { App } from 'supertest/types.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AppModule } from '../src/app.module.js';
+import { PrismaService } from '../src/prisma.service.js';
 
 describe('Attendance Module (e2e)', () => {
   let app: INestApplication<App>;
@@ -72,6 +73,34 @@ describe('Attendance Module (e2e)', () => {
   });
 
   afterAll(async () => {
+    try {
+      const prismaService = app.get(PrismaService);
+      const empUser = await prismaService.client.orm.public.User.where({
+        email: employeeEmail,
+      }).first();
+      if (empUser) {
+        await prismaService.client.orm.public.Attendance.where({
+          userId: empUser.id,
+        }).delete();
+        await prismaService.client.orm.public.User.where({
+          id: empUser.id,
+        }).delete();
+      }
+
+      const adminUser = await prismaService.client.orm.public.User.where({
+        email: adminEmail,
+      }).first();
+      if (adminUser) {
+        await prismaService.client.orm.public.Attendance.where({
+          userId: adminUser.id,
+        }).delete();
+        await prismaService.client.orm.public.User.where({
+          id: adminUser.id,
+        }).delete();
+      }
+    } catch {
+      // ignore cleanup errors
+    }
     await app.close();
   });
 
