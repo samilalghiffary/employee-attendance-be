@@ -115,7 +115,7 @@ describe('Attendance Module (e2e)', () => {
       expect(res.body.data.checkInLat).toBe(-6.2088);
       expect(res.body.data.checkInLng).toBe(106.8456);
       expect(res.body.data.lateMinutes).toBeDefined();
-      expect(res.body.data.notes).toBe('First check-in today');
+      expect(res.body.data.notes).toBe('Checkin: First check-in today');
     });
 
     it('should reject check-in if latitude or longitude is missing (400 Bad Request)', async () => {
@@ -255,6 +255,40 @@ describe('Attendance Module (e2e)', () => {
         .get('/api/admin/attendance/summary?startDate=invalid-date')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(400);
+    });
+  });
+
+  describe('DELETE /api/admin/attendance/:id', () => {
+    it('should deny regular employee with 403 Forbidden', async () => {
+      await request(app.getHttpServer())
+        .delete('/api/admin/attendance/some-id')
+        .set('Authorization', `Bearer ${employeeToken}`)
+        .expect(403);
+    });
+
+    it('should return 404 if record to delete is not found', async () => {
+      await request(app.getHttpServer())
+        .delete('/api/admin/attendance/non-existent-id')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(404);
+    });
+
+    it('should allow admin to delete attendance record successfully', async () => {
+      const overview = await request(app.getHttpServer())
+        .get('/api/admin/attendance/overview')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      if (overview.body.data.length > 0) {
+        const targetId = overview.body.data[0].id;
+        const res = await request(app.getHttpServer())
+          .delete(`/api/admin/attendance/${targetId}`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        expect(res.body.success).toBe(true);
+        expect(res.body.message).toContain('deleted');
+      }
     });
   });
 });

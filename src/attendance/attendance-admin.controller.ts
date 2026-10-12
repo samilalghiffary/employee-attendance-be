@@ -1,8 +1,10 @@
 import {
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -58,5 +60,21 @@ export class AttendanceAdminController {
     @Query() query: QueryAttendanceSummaryDto,
   ): Promise<AttendanceSummaryResponseDto> {
     return this.attendanceService.getSummary(query);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.OK)
+  @ApiDoc({
+    summary: 'Delete attendance record (Admin)',
+    description:
+      'Permanently deletes a specific attendance log record by its ID.',
+    status: HttpStatus.OK,
+    responseDescription: 'Attendance record deleted successfully',
+    isAuth: true,
+  })
+  async deleteAttendance(
+    @Param('id') id: string,
+  ): Promise<{ success: boolean; message: string }> {
+    return this.attendanceService.deleteAttendance(id);
   }
 }

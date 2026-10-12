@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { AttendanceStatus } from '../common/enums/attendance-status.enum.js';
@@ -81,6 +82,10 @@ export class AttendanceService {
 
     const status = isLate ? AttendanceStatus.LATE : AttendanceStatus.PRESENT;
 
+    const checkInNotes = dto.notes?.trim()
+      ? `Checkin: ${dto.notes.trim()}`
+      : null;
+
     const record = await this.prisma.client.orm.public.Attendance.create({
       userId,
       date: todayStr,
@@ -88,7 +93,7 @@ export class AttendanceService {
       checkInLat: Number(dto.latitude),
       checkInLng: Number(dto.longitude),
       status,
-      notes: dto.notes ?? null,
+      notes: checkInNotes,
     });
 
     const successMessage =
@@ -140,10 +145,13 @@ export class AttendanceService {
       throw new ConflictException('You have already checked out for today.');
     }
 
-    const updatedNotes = dto.notes
+    const checkoutNote = dto.notes?.trim()
+      ? `Checkout: ${dto.notes.trim()}`
+      : null;
+    const updatedNotes = checkoutNote
       ? existing.notes
-        ? `${existing.notes} | Checkout: ${dto.notes}`
-        : dto.notes
+        ? `${existing.notes} | ${checkoutNote}`
+        : checkoutNote
       : existing.notes;
 
     const updated = await this.prisma.client.orm.public.Attendance.where({
@@ -412,6 +420,27 @@ export class AttendanceService {
     return {
       count: createdCount,
       date: dateStr,
+    };
+  }
+
+  async deleteAttendance(
+    id: string,
+  ): Promise<{ success: boolean; message: string }> {
+    const existing = await this.prisma.client.orm.public.Attendance.where({
+      id,
+    }).first();
+
+    if (!existing) {
+      throw new NotFoundException(
+        `Attendance record with ID '${id}' not found.`,
+      );
+    }
+
+    await this.prisma.client.orm.public.Attendance.where({ id }).delete();
+
+    return {
+      success: true,
+      message: 'Attendance record deleted successfully.',
     };
   }
 }
