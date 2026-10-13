@@ -28,6 +28,8 @@ import {
 } from './dto/attendance-response.dto.js';
 import type { CheckInDto } from './dto/check-in.dto.js';
 import type { CheckOutDto } from './dto/check-out.dto.js';
+import type { MyAttendanceSummaryResponseDto } from './dto/my-attendance-summary.dto.js';
+import type { QueryAttendanceSummaryDto } from './dto/query-attendance-summary.dto.js';
 import type {
   QueryAdminAttendanceDto,
   QueryAttendanceDto,
@@ -287,6 +289,68 @@ export class AttendanceService {
     );
   }
 
+  async getMySummary(
+    userId: string,
+    query: QueryAttendanceSummaryDto,
+  ): Promise<MyAttendanceSummaryResponseDto> {
+    let collection = this.prisma.client.orm.public.Attendance.where((r) =>
+      r.userId.eq(userId),
+    );
+
+    if (query.startDate) {
+      collection = collection.where((r) => r.date.gte(query.startDate!));
+    }
+    if (query.endDate) {
+      collection = collection.where((r) => r.date.lte(query.endDate!));
+    }
+
+    const [presentAgg, lateAgg, absentAgg, allRecords] = await Promise.all([
+      collection
+        .where((a) => a.status.eq(AttendanceStatus.PRESENT))
+        .aggregate((agg) => ({ count: agg.count() })),
+      collection
+        .where((a) => a.status.eq(AttendanceStatus.LATE))
+        .aggregate((agg) => ({ count: agg.count() })),
+      collection
+        .where((a) => a.status.eq(AttendanceStatus.ABSENT))
+        .aggregate((agg) => ({ count: agg.count() })),
+      collection.all(),
+    ]);
+
+    const present = presentAgg.count;
+    const late = lateAgg.count;
+    const absent = absentAgg.count;
+    const totalRecords = present + late + absent;
+
+    const lateMinutes = allRecords.reduce(
+      (acc, r) => acc + (r.lateMinutes || 0),
+      0,
+    );
+    const earlyLeaveMinutes = allRecords.reduce(
+      (acc, r) => acc + (r.earlyLeaveMinutes || 0),
+      0,
+    );
+
+    const onTimeRate =
+      totalRecords > 0
+        ? Math.round((present / totalRecords) * 100) + '%'
+        : '100%';
+
+    return {
+      success: true,
+      message: 'Personal attendance summary retrieved successfully',
+      data: {
+        totalRecords,
+        present,
+        late,
+        absent,
+        lateMinutes,
+        earlyLeaveMinutes,
+        onTimeRate,
+      },
+    };
+  }
+
   async getAdminOverview(
     query: QueryAdminAttendanceDto,
   ): Promise<PaginatedAttendanceResponseDto> {
@@ -364,9 +428,12 @@ export class AttendanceService {
     );
   }
 
-  async getSummary(query: { startDate?: string; endDate?: string }) {
+  async getSummary(query: QueryAttendanceSummaryDto) {
     let collection = this.prisma.client.orm.public.Attendance;
 
+    if (query.userId) {
+      collection = collection.where((a) => a.userId.eq(query.userId!));
+    }
     if (query.startDate) {
       collection = collection.where((a) => a.date.gte(query.startDate!));
     }
@@ -388,10 +455,12 @@ export class AttendanceService {
         collection
           .where((a) => a.status.eq(AttendanceStatus.ABSENT))
           .aggregate((agg) => ({ count: agg.count() })),
-        this.prisma.client.orm.public.User.where({
-          role: UserRole.EMPLOYEE,
-          isActive: true,
-        }).aggregate((agg) => ({ count: agg.count() })),
+        query.userId
+          ? Promise.resolve({ count: 1 })
+          : this.prisma.client.orm.public.User.where({
+              role: UserRole.EMPLOYEE,
+              isActive: true,
+            }).aggregate((agg) => ({ count: agg.count() })),
       ]);
 
     const totalPresent = presentAgg.count;
@@ -401,9 +470,17 @@ export class AttendanceService {
     const totalEmployees = employeeAgg.count;
 
     const attendedCount = totalPresent + totalLate;
+    const totalRecords = attendedCount + totalLeave + totalAbsent;
+
+    const isSingleDay = Boolean(
+      query.startDate && query.endDate && query.startDate === query.endDate,
+    );
+
+    const denominator = isSingleDay ? totalEmployees : totalRecords;
+
     const ratePercent =
-      totalEmployees > 0
-        ? ((attendedCount / totalEmployees) * 100).toFixed(1) + '%'
+      denominator > 0
+        ? Math.min(100, (attendedCount / denominator) * 100).toFixed(1) + '%'
         : '0.0%';
 
     return {

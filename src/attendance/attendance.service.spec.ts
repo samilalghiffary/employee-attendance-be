@@ -368,6 +368,40 @@ describe('AttendanceService', () => {
     });
   });
 
+  describe('getMySummary', () => {
+    it('should aggregate personal attendance metrics correctly', async () => {
+      const mockChain: any = {
+        where: vi.fn().mockImplementation((condition) => {
+          if (typeof condition === 'function') {
+            return mockChain;
+          }
+          return mockChain;
+        }),
+        aggregate: vi.fn().mockImplementation(() => {
+          return Promise.resolve({ count: 5 });
+        }),
+        all: vi.fn().mockResolvedValue([
+          { lateMinutes: 20, earlyLeaveMinutes: 10 },
+          { lateMinutes: 15, earlyLeaveMinutes: 0 },
+        ]),
+      };
+
+      (mockPrismaClient.orm.public.Attendance as any).where = vi
+        .fn()
+        .mockReturnValue(mockChain);
+
+      const result = await attendanceService.getMySummary('emp-1', {
+        startDate: '2026-10-01',
+        endDate: '2026-10-31',
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.data.lateMinutes).toBe(35);
+      expect(result.data.earlyLeaveMinutes).toBe(10);
+      expect(result.data.present).toBe(5);
+    });
+  });
+
   describe('markDailyAbsents', () => {
     it('should create ABSENT records for employees who have not checked in', async () => {
       const mockUserChain = {

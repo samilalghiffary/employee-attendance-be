@@ -1,4 +1,4 @@
-import { IsDateString, IsOptional } from 'class-validator';
+import { IsDateString, IsOptional, IsUUID } from 'class-validator';
 
 export class QueryAttendanceSummaryDto {
   /**
@@ -16,4 +16,12 @@ export class QueryAttendanceSummaryDto {
   @IsOptional()
   @IsDateString()
   endDate?: string;
+
+  /**
+   * Filter metrics for a specific employee by ID
+   * @example d8f1a179-8b91-4cf4-916c-e40243eec345
+   */
+  @IsOptional()
+  @IsUUID('4')
+  userId?: string;
 }

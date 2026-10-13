@@ -21,7 +21,8 @@
     "test:debug": "vitest --inspect-brk --no-file-parallelism",
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
     "contract:emit": "prisma contract emit",
-    "db:seed": "npx tsx src/prisma/seed.ts"
+    "db:seed": "npx tsx src/prisma/seed.ts",
+    "db:seed:attendance": "npx tsx src/prisma/seed-attendance.ts"
   },
   "dependencies": {
     "@nestjs/common": "^12.0.1",

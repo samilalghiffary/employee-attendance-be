@@ -23,6 +23,8 @@ import {
 } from './dto/attendance-response.dto.js';
 import { CheckInDto } from './dto/check-in.dto.js';
 import { CheckOutDto } from './dto/check-out.dto.js';
+import { MyAttendanceSummaryResponseDto } from './dto/my-attendance-summary.dto.js';
+import { QueryAttendanceSummaryDto } from './dto/query-attendance-summary.dto.js';
 import { QueryAttendanceDto } from './dto/query-attendance.dto.js';
 
 @ApiTags('Attendance')
@@ -101,5 +103,23 @@ export class AttendanceController {
     @Query() query: QueryAttendanceDto,
   ): Promise<PaginatedAttendanceResponseDto> {
     return this.attendanceService.getMyHistory(user.id, query);
+  }
+
+  @Get('my-summary')
+  @HttpCode(HttpStatus.OK)
+  @ApiDoc({
+    summary: 'Personal attendance summary metrics',
+    description:
+      'Retrieves aggregate attendance metrics (total records, present, late, absent, minutes) for the active employee with optional date range.',
+    status: HttpStatus.OK,
+    responseType: MyAttendanceSummaryResponseDto,
+    responseDescription: 'Personal attendance summary retrieved successfully',
+    isAuth: true,
+  })
+  async getMySummary(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: QueryAttendanceSummaryDto,
+  ): Promise<MyAttendanceSummaryResponseDto> {
+    return this.attendanceService.getMySummary(user.id, query);
   }
 }

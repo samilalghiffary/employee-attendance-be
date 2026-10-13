@@ -230,6 +230,36 @@ describe('Attendance Module (e2e)', () => {
     });
   });
 
+  describe('GET /api/attendance/my-summary', () => {
+    it('should return personal aggregate summary metrics for the authenticated employee (200)', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/attendance/my-summary')
+        .set('Authorization', `Bearer ${employeeToken}`)
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toHaveProperty('totalRecords');
+      expect(res.body.data).toHaveProperty('present');
+      expect(res.body.data).toHaveProperty('late');
+      expect(res.body.data).toHaveProperty('absent');
+      expect(res.body.data).toHaveProperty('lateMinutes');
+      expect(res.body.data).toHaveProperty('earlyLeaveMinutes');
+      expect(res.body.data).toHaveProperty('onTimeRate');
+    });
+
+    it('should filter summary by date range', async () => {
+      const res = await request(app.getHttpServer())
+        .get(
+          '/api/attendance/my-summary?startDate=2026-10-01&endDate=2026-10-31',
+        )
+        .set('Authorization', `Bearer ${employeeToken}`)
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(typeof res.body.data.totalRecords).toBe('number');
+    });
+  });
+
   describe('GET /api/admin/attendance/overview', () => {
     it('should deny access to regular employee with 403 Forbidden', async () => {
       await request(app.getHttpServer())
@@ -277,6 +307,26 @@ describe('Attendance Module (e2e)', () => {
       expect(res.body.data).toHaveProperty('totalLate');
       expect(res.body.data).toHaveProperty('totalAbsent');
       expect(res.body.data).toHaveProperty('attendanceRate');
+    });
+
+    it('should allow admin to filter summary metrics by specific employee userId (200)', async () => {
+      const overviewRes = await request(app.getHttpServer())
+        .get('/api/admin/attendance/overview')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      const targetUserId = overviewRes.body.data[0]?.userId;
+      if (targetUserId) {
+        const res = await request(app.getHttpServer())
+          .get(
+            `/api/admin/attendance/summary?userId=${targetUserId}&startDate=2026-10-01&endDate=2026-10-31`,
+          )
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        expect(res.body.success).toBe(true);
+        expect(res.body.data.totalEmployees).toBe(1);
+      }
     });
 
     it('should reject invalid date string query with 400 Bad Request', async () => {
