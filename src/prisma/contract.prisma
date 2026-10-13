@@ -37,7 +37,9 @@ model Attendance {
   checkOutLat Float?
   checkOutLng Float?
   status      AttendanceStatus           @default(PRESENT)
-  notes       String?
+  lateMinutes       Int                        @default(0)
+  earlyLeaveMinutes Int                        @default(0)
+  notes             String?
   createdAt   TimestamptzString          @default(now())
   updatedAt   temporal.updatedAtString()
 

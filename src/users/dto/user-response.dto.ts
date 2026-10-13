@@ -3,6 +3,9 @@ import {
   type PaginatedResult,
 } from '../../common/dto/pagination.dto.js';
 import { UserRole } from '../../common/enums/role.enum.js';
+import type { StorageColumnTypes } from '../../prisma/contract.d.js';
+
+export type UserStorageRecord = StorageColumnTypes['public']['User'];
 
 export class UserItemDto {
   /**
@@ -47,12 +50,16 @@ export class UserItemDto {
    */
   updatedAt!: string;
 
-  static fromEntity(user: any): UserItemDto {
+  static fromEntity(
+    user:
+      | UserStorageRecord
+      | (Omit<UserStorageRecord, 'password'> & { password?: string }),
+  ): UserItemDto {
     return {
       id: user.id,
       email: user.email,
       name: user.name,
-      role: user.role,
+      role: user.role as UserRole,
       isActive: user.isActive,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,

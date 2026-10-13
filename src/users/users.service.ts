@@ -81,6 +81,10 @@ export class UsersService {
       id: userId,
     }).update(updatePayload);
 
+    if (!updated) {
+      throw new NotFoundException(`User with ID '${userId}' not found`);
+    }
+
     return {
       success: true,
       message: 'Profile updated successfully',
@@ -190,6 +194,10 @@ export class UsersService {
       isActive: dto.isActive,
     });
 
+    if (!updated) {
+      throw new NotFoundException(`User with ID '${targetUserId}' not found`);
+    }
+
     return {
       success: true,
       message: `User status successfully updated to ${dto.isActive ? 'active' : 'inactive'}`,
@@ -209,7 +217,7 @@ export class UsersService {
       throw new NotFoundException(`User with ID '${targetUserId}' not found`);
     }
 
-    const updatePayload: Record<string, any> = {};
+    const updatePayload: Record<string, string | boolean> = {};
 
     if (dto.name !== undefined) {
       updatePayload['name'] = dto.name.trim();
@@ -243,6 +251,10 @@ export class UsersService {
       id: targetUserId,
     }).update(updatePayload);
 
+    if (!updated) {
+      throw new NotFoundException(`User with ID '${targetUserId}' not found`);
+    }
+
     return {
       success: true,
       message: 'User details updated successfully',
@@ -253,34 +265,69 @@ export class UsersService {
   async getAllUsers(query: QueryUsersDto): Promise<PaginatedUserResponseDto> {
     const { page, limit, offset } = getPaginationParams(query);
 
-    const allUsers = await this.prisma.client.orm.public.User.all();
-
-    let filtered = allUsers;
+    let collection = this.prisma.client.orm.public.User;
 
     if (query.role) {
-      filtered = filtered.filter((u) => u.role === query.role);
+      collection = collection.where((u) => u.role.eq(query.role!));
     }
 
     if (query.isActive !== undefined) {
-      filtered = filtered.filter((u) => u.isActive === query.isActive);
+      collection = collection.where((u) => u.isActive.eq(query.isActive!));
     }
 
     if (query.search) {
-      const searchLower = query.search.toLowerCase().trim();
-      filtered = filtered.filter(
-        (u) =>
-          u.name.toLowerCase().includes(searchLower) ||
-          u.email.toLowerCase().includes(searchLower),
+      const searchPattern = `%${query.search.trim()}%`;
+      collection = collection.where(
+        (u) => u.name.ilike(searchPattern) || u.email.ilike(searchPattern),
       );
     }
 
-    filtered.sort((a, b) => (b.createdAt > a.createdAt ? 1 : -1));
+    const { total } = await collection.aggregate((agg) => ({
+      total: agg.count(),
+    }));
 
-    const total = filtered.length;
-    const paginated = filtered.slice(offset, offset + limit);
+    const sortBy = query.sortBy || 'createdAt';
+    const sortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc';
+
+    if (query.sortBy === 'isActive') {
+      const allFiltered = await collection.all();
+      const mapped = allFiltered.map((item) => UserItemDto.fromEntity(item));
+      mapped.sort((a, b) => {
+        const valA = a.isActive ? 1 : 0;
+        const valB = b.isActive ? 1 : 0;
+        const diff = sortOrder === 'asc' ? valA - valB : valB - valA;
+        if (diff !== 0) return diff;
+        return (b.createdAt || '').localeCompare(a.createdAt || '');
+      });
+      const paginated = mapped.slice(offset, offset + limit);
+      return createPaginatedResponse(paginated, total, page, limit);
+    }
+
+    const users = await collection
+      .orderBy([
+        (u) => {
+          switch (sortBy) {
+            case 'name':
+              return sortOrder === 'asc' ? u.name.asc() : u.name.desc();
+            case 'email':
+              return sortOrder === 'asc' ? u.email.asc() : u.email.desc();
+            case 'role':
+              return sortOrder === 'asc' ? u.role.asc() : u.role.desc();
+            case 'createdAt':
+            default:
+              return sortOrder === 'asc'
+                ? u.createdAt.asc()
+                : u.createdAt.desc();
+          }
+        },
+        (u) => u.id.asc(),
+      ])
+      .limit(limit)
+      .offset(offset)
+      .all();
 
     return createPaginatedResponse(
-      paginated.map((item) => UserItemDto.fromEntity(item)),
+      users.map((item) => UserItemDto.fromEntity(item)),
       total,
       page,
       limit,

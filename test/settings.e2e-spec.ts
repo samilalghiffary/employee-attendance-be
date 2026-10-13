@@ -4,11 +4,14 @@ import request from 'supertest';
 import type { App } from 'supertest/types.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AppModule } from '../src/app.module.js';
+import { PrismaService } from '../src/prisma.service.js';
 
 describe('Settings Module (e2e)', () => {
   let app: INestApplication<App>;
   let adminToken = '';
   let employeeToken = '';
+  let adminEmail = '';
+  let employeeEmail = '';
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -26,26 +29,69 @@ describe('Settings Module (e2e)', () => {
     );
     await app.init();
 
+    const rand = Math.random().toString(36).substring(7);
+    adminEmail = `admin_settings_${rand}@test.com`;
+    employeeEmail = `employee_settings_${rand}@test.com`;
+    const password = 'Password123!';
+
+    await request(app.getHttpServer())
+      .post('/api/auth/register')
+      .send({
+        name: 'Admin Settings Tester',
+        email: adminEmail,
+        password,
+        role: 'ADMIN',
+      })
+      .expect(201);
+
     const adminLogin = await request(app.getHttpServer())
       .post('/api/auth/login')
       .send({
-        email: 'admin@acme.com',
-        password: 'Admin123!',
+        email: adminEmail,
+        password,
       })
       .expect(200);
     adminToken = adminLogin.body.accessToken;
 
+    await request(app.getHttpServer())
+      .post('/api/auth/register')
+      .send({
+        name: 'Employee Settings Tester',
+        email: employeeEmail,
+        password,
+        role: 'EMPLOYEE',
+      })
+      .expect(201);
+
     const empLogin = await request(app.getHttpServer())
       .post('/api/auth/login')
       .send({
-        email: 'employee@acme.com',
-        password: 'Employee123!',
+        email: employeeEmail,
+        password,
       })
       .expect(200);
     employeeToken = empLogin.body.accessToken;
   });
 
   afterAll(async () => {
+    try {
+      const prismaService = app.get(PrismaService);
+      await prismaService.client.orm.public.User.where({
+        email: adminEmail,
+      }).delete();
+      await prismaService.client.orm.public.User.where({
+        email: employeeEmail,
+      }).delete();
+      await prismaService.client.orm.public.SystemSetting.where({
+        key: 'DEFAULT_SCHEDULE',
+      }).update({
+        workStartTime: '08:00',
+        workEndTime: '17:00',
+        lateToleranceMinutes: 15,
+      });
+    } catch {
+      // ignore cleanup errors
+    }
     await app.close();
   });
 

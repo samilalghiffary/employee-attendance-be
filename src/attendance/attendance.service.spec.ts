@@ -170,6 +170,8 @@ describe('AttendanceService', () => {
         checkIn: '2026-10-11T01:30:00.000Z',
         checkOut: '2026-10-11T10:00:00.000Z',
         status: AttendanceStatus.PRESENT,
+        lateMinutes: 0,
+        earlyLeaveMinutes: 0,
         notes: 'Datang pagi | Checkout: Selesai shift',
         createdAt: '2026-10-11T01:30:00.000Z',
       });
@@ -186,6 +188,12 @@ describe('AttendanceService', () => {
 
       expect(result.success).toBe(true);
       expect(result.data.checkOut).toBeDefined();
+      expect(result.data.earlyLeaveMinutes).toBeDefined();
+      expect(updateMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          earlyLeaveMinutes: expect.any(Number),
+        }),
+      );
     });
   });
 
@@ -254,28 +262,35 @@ describe('AttendanceService', () => {
     const userId = 'user-uuid-123';
 
     it('should return paginated history filtered by user', async () => {
-      mockPrismaClient.orm.public.Attendance.where.mockReturnValue({
-        orderBy: vi.fn().mockReturnValue({
-          all: vi.fn().mockResolvedValue([
-            {
-              id: 'attendance-1',
-              userId,
-              date: '2026-10-11',
-              checkIn: '2026-10-11T01:30:00.000Z',
-              checkOut: '2026-10-11T10:00:00.000Z',
-              status: AttendanceStatus.PRESENT,
-            },
-            {
-              id: 'attendance-2',
-              userId,
-              date: '2026-10-10',
-              checkIn: '2026-10-10T02:30:00.000Z',
-              checkOut: '2026-10-10T10:00:00.000Z',
-              status: AttendanceStatus.LATE,
-            },
-          ]),
-        }),
-      });
+      const mockChain = {
+        where: vi.fn().mockReturnThis(),
+        aggregate: vi.fn().mockResolvedValue({ total: 2 }),
+        orderBy: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
+        offset: vi.fn().mockReturnThis(),
+        all: vi.fn().mockResolvedValue([
+          {
+            id: 'attendance-1',
+            userId,
+            date: '2026-10-11',
+            checkIn: '2026-10-11T01:30:00.000Z',
+            checkOut: '2026-10-11T10:00:00.000Z',
+            status: AttendanceStatus.PRESENT,
+            lateMinutes: 0,
+          },
+          {
+            id: 'attendance-2',
+            userId,
+            date: '2026-10-10',
+            checkIn: '2026-10-10T02:30:00.000Z',
+            checkOut: '2026-10-10T10:00:00.000Z',
+            status: AttendanceStatus.LATE,
+            lateMinutes: 15,
+          },
+        ]),
+      };
+
+      mockPrismaClient.orm.public.Attendance.where.mockReturnValue(mockChain);
 
       const result = await attendanceService.getMyHistory(userId, {
         page: 1,
@@ -291,34 +306,50 @@ describe('AttendanceService', () => {
 
   describe('getAdminOverview', () => {
     it('should return all attendance records for admin with user details', async () => {
-      mockPrismaClient.orm.public.Attendance.include.mockReturnValue({
-        orderBy: vi.fn().mockReturnValue({
-          all: vi.fn().mockResolvedValue([
-            {
-              id: 'att-1',
-              userId: 'user-1',
-              date: '2026-10-11',
-              status: AttendanceStatus.PRESENT,
-              user: {
-                id: 'user-1',
-                name: 'Budi Santoso',
-                email: 'budi@company.com',
-              },
+      const mockChain = {
+        where: vi.fn().mockReturnThis(),
+        aggregate: vi.fn().mockResolvedValue({ total: 2 }),
+        include: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
+        offset: vi.fn().mockReturnThis(),
+        all: vi.fn().mockResolvedValue([
+          {
+            id: 'att-1',
+            userId: 'user-1',
+            date: '2026-10-11',
+            status: AttendanceStatus.PRESENT,
+            lateMinutes: 0,
+            user: {
+              id: 'user-1',
+              name: 'Budi Santoso',
+              email: 'budi@company.com',
             },
-            {
-              id: 'att-2',
-              userId: 'user-2',
-              date: '2026-10-11',
-              status: AttendanceStatus.LATE,
-              user: {
-                id: 'user-2',
-                name: 'Siti Rahma',
-                email: 'siti@company.com',
-              },
+          },
+          {
+            id: 'att-2',
+            userId: 'user-2',
+            date: '2026-10-11',
+            status: AttendanceStatus.LATE,
+            lateMinutes: 20,
+            user: {
+              id: 'user-2',
+              name: 'Siti Rahma',
+              email: 'siti@company.com',
             },
-          ]),
-        }),
-      });
+          },
+        ]),
+      };
+
+      (mockPrismaClient.orm.public.Attendance as any).where = vi
+        .fn()
+        .mockReturnValue(mockChain);
+      (mockPrismaClient.orm.public.Attendance as any).aggregate = vi
+        .fn()
+        .mockResolvedValue({ total: 2 });
+      (mockPrismaClient.orm.public.Attendance as any).include = vi
+        .fn()
+        .mockReturnValue(mockChain);
 
       const result = await attendanceService.getAdminOverview({
         page: 1,
@@ -339,24 +370,23 @@ describe('AttendanceService', () => {
 
   describe('markDailyAbsents', () => {
     it('should create ABSENT records for employees who have not checked in', async () => {
-      mockPrismaClient.orm.public.User.where.mockReturnValue({
-        all: vi.fn().mockResolvedValue([
-          { id: 'emp-1', role: 'EMPLOYEE', isActive: true },
-          { id: 'emp-2', role: 'EMPLOYEE', isActive: true },
-        ]),
-      });
+      const mockUserChain = {
+        where: vi.fn().mockReturnThis(),
+        all: vi
+          .fn()
+          .mockResolvedValue([
+            { id: 'emp-2', role: 'EMPLOYEE', isActive: true },
+          ]),
+      };
 
-      mockPrismaClient.orm.public.Attendance.where.mockReturnValue({
-        all: vi.fn().mockResolvedValue([
-          { id: 'att-1', userId: 'emp-1', date: '2026-10-11' }, // already checked in
-        ]),
-      });
+      mockPrismaClient.orm.public.User.where.mockReturnValue(mockUserChain);
 
       mockPrismaClient.orm.public.Attendance.create.mockResolvedValue({
         id: 'att-new',
         userId: 'emp-2',
         date: '2026-10-11',
         status: AttendanceStatus.ABSENT,
+        lateMinutes: 0,
       });
 
       const result = await attendanceService.markDailyAbsents('2026-10-11');
@@ -376,7 +406,8 @@ describe('AttendanceService', () => {
   describe('autoCheckOutMissingRecords', () => {
     it('should auto-checkout records with checkIn but no checkOut', async () => {
       const mockUpdate = vi.fn().mockResolvedValue({});
-      mockPrismaClient.orm.public.Attendance.where.mockReturnValue({
+      const mockAttendanceChain = {
+        where: vi.fn().mockReturnThis(),
         all: vi.fn().mockResolvedValue([
           {
             id: 'att-1',
@@ -386,18 +417,15 @@ describe('AttendanceService', () => {
             checkOut: null,
             status: AttendanceStatus.PRESENT,
             notes: 'Pagi',
-          },
-          {
-            id: 'att-2',
-            userId: 'emp-2',
-            date: '2026-10-11',
-            checkIn: '2026-10-11T01:00:00.000Z',
-            checkOut: '2026-10-11T10:00:00.000Z',
-            status: AttendanceStatus.PRESENT,
+            lateMinutes: 0,
           },
         ]),
         update: mockUpdate,
-      });
+      };
+
+      mockPrismaClient.orm.public.Attendance.where.mockReturnValue(
+        mockAttendanceChain,
+      );
 
       const result =
         await attendanceService.autoCheckOutMissingRecords('2026-10-11');

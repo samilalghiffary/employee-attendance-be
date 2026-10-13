@@ -1,5 +1,16 @@
 import { AttendanceStatus } from '../../common/enums/attendance-status.enum.js';
-import { calculateLateArrival } from '../../common/utils/date.util.js';
+import {
+  calculateEarlyLeave,
+  calculateLateArrival,
+} from '../../common/utils/date.util.js';
+import type { StorageColumnTypes } from '../../prisma/contract.d.js';
+
+export type AttendanceStorageRecord =
+  StorageColumnTypes['public']['Attendance'];
+export type AttendanceUserRelation = Pick<
+  StorageColumnTypes['public']['User'],
+  'id' | 'name' | 'email'
+>;
 
 export class AttendanceItemDto {
   /**
@@ -81,6 +92,12 @@ export class AttendanceItemDto {
   lateMinutes!: number;
 
   /**
+   * Minutes early if departure was before workEndTime (0 if on time or after hours)
+   * @example 30
+   */
+  earlyLeaveMinutes!: number;
+
+  /**
    * Employee user profile details
    */
   user?: {
@@ -90,12 +107,17 @@ export class AttendanceItemDto {
   };
 
   static fromEntity(
-    record: any,
+    record: AttendanceStorageRecord & { user?: AttendanceUserRelation | null },
     workStartTime: string = '08:00',
     lateToleranceMinutes: number = 15,
+    workEndTime: string = '17:00',
   ): AttendanceItemDto {
-    let lateMinutes = 0;
-    if (record.status === AttendanceStatus.LATE && record.checkIn) {
+    let lateMinutes = Number(record.lateMinutes ?? 0);
+    if (
+      !lateMinutes &&
+      record.status === AttendanceStatus.LATE &&
+      record.checkIn
+    ) {
       const checkInDate = new Date(record.checkIn);
       const { lateMinutes: computedMinutes } = calculateLateArrival(
         checkInDate,
@@ -103,6 +125,16 @@ export class AttendanceItemDto {
         lateToleranceMinutes,
       );
       lateMinutes = computedMinutes;
+    }
+
+    let earlyLeaveMinutes = Number(record.earlyLeaveMinutes ?? 0);
+    if (!earlyLeaveMinutes && record.checkOut) {
+      const checkOutDate = new Date(record.checkOut);
+      const { earlyMinutes: computedEarly } = calculateEarlyLeave(
+        checkOutDate,
+        workEndTime,
+      );
+      earlyLeaveMinutes = computedEarly;
     }
 
     return {
@@ -121,6 +153,7 @@ export class AttendanceItemDto {
       notes: record.notes ?? null,
       createdAt: record.createdAt,
       lateMinutes,
+      earlyLeaveMinutes,
       user: record.user
         ? {
             id: record.user.id,

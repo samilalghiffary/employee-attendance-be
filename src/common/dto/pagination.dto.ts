@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class PaginationQueryDto {
   /**
@@ -22,6 +22,22 @@ export class PaginationQueryDto {
   @Min(1)
   @Max(100)
   limit: number = 10;
+
+  /**
+   * Field to sort by
+   * @example date
+   */
+  @IsOptional()
+  @IsString()
+  sortBy?: string;
+
+  /**
+   * Sort direction: 'asc' or 'desc'
+   * @example desc
+   */
+  @IsOptional()
+  @IsIn(['asc', 'desc'])
+  sortOrder?: 'asc' | 'desc' = 'desc';
 }
 
 export class PaginationMetaDto {

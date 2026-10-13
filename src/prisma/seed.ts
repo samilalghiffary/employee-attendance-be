@@ -63,8 +63,15 @@ async function seed() {
       `✅ Default Work Schedule seeded: ${setting.workStartTime} - ${setting.workEndTime} (Grace: ${setting.lateToleranceMinutes}m)`,
     );
   } else {
+    const setting = await db.orm.public.SystemSetting.where({
+      key: defaultScheduleKey,
+    }).update({
+      workStartTime: '08:00',
+      workEndTime: '17:00',
+      lateToleranceMinutes: 15,
+    });
     console.log(
-      `ℹ️ Work Schedule setting already exists: ${existingSetting.key}`,
+      `✅ Work Schedule setting reset to default: ${setting?.workStartTime} - ${setting?.workEndTime} (Grace: ${setting?.lateToleranceMinutes}m)`,
     );
   }
 

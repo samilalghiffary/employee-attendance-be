@@ -92,3 +92,44 @@ export function createWorkEndTimestamp(
     workEndTime.length === 5 ? `${workEndTime}:00` : workEndTime;
   return new Date(`${dateStr}T${timeWithSec}${timeZoneOffset}`).toISOString();
 }
+
+/**
+ * Calculates whether checkout is early and how many minutes early.
+ * Example: workEndTime 17:00, checkout 16:30 -> isEarly: true, earlyMinutes: 30
+ * Example: workEndTime 17:00, checkout 17:05 -> isEarly: false, earlyMinutes: 0
+ */
+export function calculateEarlyLeave(
+  checkOutDate: Date,
+  workEndTime: string,
+  timeZone = 'Asia/Jakarta',
+): { isEarly: boolean; earlyMinutes: number } {
+  const timeFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hour: 'numeric',
+    minute: 'numeric',
+    hourCycle: 'h23',
+  });
+
+  const parts = timeFormatter.formatToParts(checkOutDate);
+  const checkOutHour = Number(
+    parts.find((p) => p.type === 'hour')?.value ?? '0',
+  );
+  const checkOutMinute = Number(
+    parts.find((p) => p.type === 'minute')?.value ?? '0',
+  );
+
+  const [endHourStr, endMinuteStr] = workEndTime.split(':');
+  const endHour = Number(endHourStr ?? '17');
+  const endMinute = Number(endMinuteStr ?? '0');
+
+  const checkOutTotalMinutes = checkOutHour * 60 + checkOutMinute;
+  const targetTotalMinutes = endHour * 60 + endMinute;
+
+  const diffMinutes = targetTotalMinutes - checkOutTotalMinutes;
+
+  if (diffMinutes > 0) {
+    return { isEarly: true, earlyMinutes: diffMinutes };
+  }
+
+  return { isEarly: false, earlyMinutes: 0 };
+}

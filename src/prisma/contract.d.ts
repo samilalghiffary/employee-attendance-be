@@ -18,7 +18,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'ea76fac2f166f1086ee082580cbd53c7cd885d55972aa085d44b71ac52c6ad74'>;
+  StorageHashBase<'425c4397f7e1932def5e9aa8a56ee96eaa6dfaea254fbe14b59a24c2e948f1ad'>;
 export type ExecutionHash =
   ExecutionHashBase<'4615869380da8de24f12af71c813635e68103a01b3ab22c381578d8636665ed2'>;
 export type ProfileHash =
@@ -243,7 +243,9 @@ export type FieldOutputTypes = {
       readonly checkOutLng: CodecTypes['pg/float8@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly date: CodecTypes['pg/date-string@1']['output'];
+      readonly earlyLeaveMinutes: CodecTypes['pg/int4@1']['output'];
       readonly id: CodecTypes['pg/text@1']['output'];
+      readonly lateMinutes: CodecTypes['pg/int4@1']['output'];
       readonly notes: CodecTypes['pg/text@1']['output'] | null;
       readonly status: 'PRESENT' | 'LATE' | 'ABSENT' | 'LEAVE';
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
@@ -281,7 +283,9 @@ export type FieldInputTypes = {
       readonly checkOutLng: CodecTypes['pg/float8@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly date: CodecTypes['pg/date-string@1']['input'];
+      readonly earlyLeaveMinutes: CodecTypes['pg/int4@1']['input'];
       readonly id: CodecTypes['pg/text@1']['input'];
+      readonly lateMinutes: CodecTypes['pg/int4@1']['input'];
       readonly notes: CodecTypes['pg/text@1']['input'] | null;
       readonly status: 'PRESENT' | 'LATE' | 'ABSENT' | 'LEAVE';
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
@@ -319,7 +323,9 @@ export type StorageColumnTypes = {
       readonly checkOutLng: CodecTypes['pg/float8@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly date: CodecTypes['pg/date-string@1']['output'];
+      readonly earlyLeaveMinutes: CodecTypes['pg/int4@1']['output'];
       readonly id: CodecTypes['pg/text@1']['output'];
+      readonly lateMinutes: CodecTypes['pg/int4@1']['output'];
       readonly notes: CodecTypes['pg/text@1']['output'] | null;
       readonly status: 'PRESENT' | 'LATE' | 'ABSENT' | 'LEAVE';
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
@@ -357,7 +363,9 @@ export type StorageColumnInputTypes = {
       readonly checkOutLng: CodecTypes['pg/float8@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly date: CodecTypes['pg/date-string@1']['input'];
+      readonly earlyLeaveMinutes: CodecTypes['pg/int4@1']['input'];
       readonly id: CodecTypes['pg/text@1']['input'];
+      readonly lateMinutes: CodecTypes['pg/int4@1']['input'];
       readonly notes: CodecTypes['pg/text@1']['input'] | null;
       readonly status: 'PRESENT' | 'LATE' | 'ABSENT' | 'LEAVE';
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
@@ -395,7 +403,9 @@ export namespace Models {
     checkOutLng: CodecTypes['pg/float8@1']['output'] | null;
     createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
     date: CodecTypes['pg/date-string@1']['output'];
+    earlyLeaveMinutes: CodecTypes['pg/int4@1']['output'];
     id: CodecTypes['pg/text@1']['output'];
+    lateMinutes: CodecTypes['pg/int4@1']['output'];
     notes: CodecTypes['pg/text@1']['output'] | null;
     status: 'PRESENT' | 'LATE' | 'ABSENT' | 'LEAVE';
     updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
@@ -504,10 +514,30 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly many: false;
                 };
+                readonly earlyLeaveMinutes: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 0>;
+                  };
+                  readonly many: false;
+                };
                 readonly id: {
                   readonly dataType: 'pg/text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly lateMinutes: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 0>;
+                  };
                   readonly many: false;
                 };
                 readonly notes: {
@@ -780,9 +810,17 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/date-string@1' };
               };
+              readonly earlyLeaveMinutes: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
               readonly id: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly lateMinutes: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
               readonly notes: {
                 readonly nullable: true;
@@ -827,7 +865,9 @@ type ContractBase = Omit<
                 readonly checkOutLng: { readonly column: 'checkOutLng' };
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly date: { readonly column: 'date' };
+                readonly earlyLeaveMinutes: { readonly column: 'earlyLeaveMinutes' };
                 readonly id: { readonly column: 'id' };
+                readonly lateMinutes: { readonly column: 'lateMinutes' };
                 readonly notes: { readonly column: 'notes' };
                 readonly status: { readonly column: 'status' };
                 readonly updatedAt: { readonly column: 'updatedAt' };

@@ -9,6 +9,7 @@ import { Cron } from '@nestjs/schedule';
 import { AttendanceStatus } from '../common/enums/attendance-status.enum.js';
 import { UserRole } from '../common/enums/role.enum.js';
 import {
+  calculateEarlyLeave,
   calculateLateArrival,
   createWorkEndTimestamp,
   getLocalDateString,
@@ -93,6 +94,7 @@ export class AttendanceService {
       checkInLat: Number(dto.latitude),
       checkInLng: Number(dto.longitude),
       status,
+      lateMinutes: isLate ? lateMinutes : 0,
       notes: checkInNotes,
     });
 
@@ -145,6 +147,12 @@ export class AttendanceService {
       throw new ConflictException('You have already checked out for today.');
     }
 
+    const schedule = await this.settingsService.getWorkSchedule();
+    const { isEarly, earlyMinutes } = calculateEarlyLeave(
+      now,
+      schedule.workEndTime,
+    );
+
     const checkoutNote = dto.notes?.trim()
       ? `Checkout: ${dto.notes.trim()}`
       : null;
@@ -160,13 +168,23 @@ export class AttendanceService {
       checkOut: now.toISOString(),
       checkOutLat: Number(dto.latitude),
       checkOutLng: Number(dto.longitude),
+      earlyLeaveMinutes: isEarly ? earlyMinutes : 0,
       notes: updatedNotes,
     });
+
+    if (!updated) {
+      throw new NotFoundException('Failed to update attendance record.');
+    }
 
     return {
       success: true,
       message: 'Check-out recorded successfully.',
-      data: AttendanceItemDto.fromEntity(updated),
+      data: AttendanceItemDto.fromEntity(
+        updated,
+        schedule.workStartTime,
+        schedule.lateToleranceMinutes,
+        schedule.workEndTime,
+      ),
     };
   }
 
@@ -210,28 +228,59 @@ export class AttendanceService {
   ): Promise<PaginatedAttendanceResponseDto> {
     const { page, limit, offset } = getPaginationParams(query);
 
-    const allUserRecords = await this.prisma.client.orm.public.Attendance.where(
-      {
-        userId,
-      },
-    )
-      .orderBy([(row) => row.date.desc(), (row) => row.id.asc()])
-      .all();
-
-    let filtered = allUserRecords;
+    let collection = this.prisma.client.orm.public.Attendance.where((r) =>
+      r.userId.eq(userId),
+    );
 
     if (query.startDate) {
-      filtered = filtered.filter((item) => item.date >= query.startDate!);
+      collection = collection.where((r) => r.date.gte(query.startDate!));
     }
     if (query.endDate) {
-      filtered = filtered.filter((item) => item.date <= query.endDate!);
+      collection = collection.where((r) => r.date.lte(query.endDate!));
     }
 
-    const total = filtered.length;
-    const paginated = filtered.slice(offset, offset + limit);
+    const { total } = await collection.aggregate((agg) => ({
+      total: agg.count(),
+    }));
+
+    const sortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc';
+    const sortBy = query.sortBy || 'date';
+
+    const records = await collection
+      .orderBy([
+        (r) => {
+          switch (sortBy) {
+            case 'lateMinutes':
+              return sortOrder === 'asc'
+                ? r.lateMinutes.asc()
+                : r.lateMinutes.desc();
+            case 'earlyLeaveMinutes':
+              return sortOrder === 'asc'
+                ? r.earlyLeaveMinutes.asc()
+                : r.earlyLeaveMinutes.desc();
+            case 'checkIn':
+              return sortOrder === 'asc'
+                ? r.checkIn.asc({ nulls: 'last' })
+                : r.checkIn.desc({ nulls: 'last' });
+            case 'checkOut':
+              return sortOrder === 'asc'
+                ? r.checkOut.asc({ nulls: 'last' })
+                : r.checkOut.desc({ nulls: 'last' });
+            case 'status':
+              return sortOrder === 'asc' ? r.status.asc() : r.status.desc();
+            case 'date':
+            default:
+              return sortOrder === 'asc' ? r.date.asc() : r.date.desc();
+          }
+        },
+        (r) => r.id.asc(),
+      ])
+      .limit(limit)
+      .offset(offset)
+      .all();
 
     return createPaginatedResponse(
-      paginated.map((item) => AttendanceItemDto.fromEntity(item)),
+      records.map((item) => AttendanceItemDto.fromEntity(item)),
       total,
       page,
       limit,
@@ -243,32 +292,72 @@ export class AttendanceService {
   ): Promise<PaginatedAttendanceResponseDto> {
     const { page, limit, offset } = getPaginationParams(query);
 
-    const allRecords = await this.prisma.client.orm.public.Attendance.include(
-      'user',
-    )
-      .orderBy([(row) => row.date.desc(), (row) => row.id.asc()])
-      .all();
-
-    let filtered = allRecords;
+    let collection = this.prisma.client.orm.public.Attendance;
 
     if (query.userId) {
-      filtered = filtered.filter((item) => item.userId === query.userId);
+      collection = collection.where((r) => r.userId.eq(query.userId!));
     }
     if (query.status) {
-      filtered = filtered.filter((item) => item.status === query.status);
+      collection = collection.where((r) => r.status.eq(query.status!));
     }
     if (query.startDate) {
-      filtered = filtered.filter((item) => item.date >= query.startDate!);
+      collection = collection.where((r) => r.date.gte(query.startDate!));
     }
     if (query.endDate) {
-      filtered = filtered.filter((item) => item.date <= query.endDate!);
+      collection = collection.where((r) => r.date.lte(query.endDate!));
     }
 
-    const total = filtered.length;
-    const paginated = filtered.slice(offset, offset + limit);
+    const { total } = await collection.aggregate((agg) => ({
+      total: agg.count(),
+    }));
+
+    const sortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc';
+    const sortBy = query.sortBy || 'date';
+
+    const records = await collection
+      .include('user')
+      .orderBy([
+        (r) => {
+          switch (sortBy) {
+            case 'lateMinutes':
+              return sortOrder === 'asc'
+                ? r.lateMinutes.asc()
+                : r.lateMinutes.desc();
+            case 'earlyLeaveMinutes':
+              return sortOrder === 'asc'
+                ? r.earlyLeaveMinutes.asc()
+                : r.earlyLeaveMinutes.desc();
+            case 'userName':
+              return sortOrder === 'asc'
+                ? r.user.name.asc()
+                : r.user.name.desc();
+            case 'userEmail':
+              return sortOrder === 'asc'
+                ? r.user.email.asc()
+                : r.user.email.desc();
+            case 'checkIn':
+              return sortOrder === 'asc'
+                ? r.checkIn.asc({ nulls: 'last' })
+                : r.checkIn.desc({ nulls: 'last' });
+            case 'checkOut':
+              return sortOrder === 'asc'
+                ? r.checkOut.asc({ nulls: 'last' })
+                : r.checkOut.desc({ nulls: 'last' });
+            case 'status':
+              return sortOrder === 'asc' ? r.status.asc() : r.status.desc();
+            case 'date':
+            default:
+              return sortOrder === 'asc' ? r.date.asc() : r.date.desc();
+          }
+        },
+        (r) => r.id.asc(),
+      ])
+      .limit(limit)
+      .offset(offset)
+      .all();
 
     return createPaginatedResponse(
-      paginated.map((item) => AttendanceItemDto.fromEntity(item)),
+      records.map((item) => AttendanceItemDto.fromEntity(item)),
       total,
       page,
       limit,
@@ -276,46 +365,52 @@ export class AttendanceService {
   }
 
   async getSummary(query: { startDate?: string; endDate?: string }) {
-    const activeEmployees = await this.prisma.client.orm.public.User.where({
-      role: UserRole.EMPLOYEE,
-      isActive: true,
-    }).all();
+    let collection = this.prisma.client.orm.public.Attendance;
 
-    const allAttendances = await this.prisma.client.orm.public.Attendance.all();
-
-    let filtered = allAttendances;
     if (query.startDate) {
-      filtered = filtered.filter((a) => a.date >= query.startDate!);
+      collection = collection.where((a) => a.date.gte(query.startDate!));
     }
     if (query.endDate) {
-      filtered = filtered.filter((a) => a.date <= query.endDate!);
+      collection = collection.where((a) => a.date.lte(query.endDate!));
     }
 
-    const totalPresent = filtered.filter(
-      (a) => a.status === AttendanceStatus.PRESENT,
-    ).length;
-    const totalLate = filtered.filter(
-      (a) => a.status === AttendanceStatus.LATE,
-    ).length;
-    const totalLeave = filtered.filter(
-      (a) => a.status === AttendanceStatus.LEAVE,
-    ).length;
-    const totalAbsent = filtered.filter(
-      (a) => a.status === AttendanceStatus.ABSENT,
-    ).length;
+    const [presentAgg, lateAgg, leaveAgg, absentAgg, employeeAgg] =
+      await Promise.all([
+        collection
+          .where((a) => a.status.eq(AttendanceStatus.PRESENT))
+          .aggregate((agg) => ({ count: agg.count() })),
+        collection
+          .where((a) => a.status.eq(AttendanceStatus.LATE))
+          .aggregate((agg) => ({ count: agg.count() })),
+        collection
+          .where((a) => a.status.eq(AttendanceStatus.LEAVE))
+          .aggregate((agg) => ({ count: agg.count() })),
+        collection
+          .where((a) => a.status.eq(AttendanceStatus.ABSENT))
+          .aggregate((agg) => ({ count: agg.count() })),
+        this.prisma.client.orm.public.User.where({
+          role: UserRole.EMPLOYEE,
+          isActive: true,
+        }).aggregate((agg) => ({ count: agg.count() })),
+      ]);
 
-    const totalExpected = activeEmployees.length;
+    const totalPresent = presentAgg.count;
+    const totalLate = lateAgg.count;
+    const totalLeave = leaveAgg.count;
+    const totalAbsent = absentAgg.count;
+    const totalEmployees = employeeAgg.count;
+
     const attendedCount = totalPresent + totalLate;
     const ratePercent =
-      totalExpected > 0
-        ? ((attendedCount / totalExpected) * 100).toFixed(1) + '%'
+      totalEmployees > 0
+        ? ((attendedCount / totalEmployees) * 100).toFixed(1) + '%'
         : '0.0%';
 
     return {
       success: true,
       message: 'Attendance summary retrieved successfully',
       data: {
-        totalEmployees: activeEmployees.length,
+        totalEmployees,
         totalPresent,
         totalLate,
         totalLeave,
@@ -353,17 +448,14 @@ export class AttendanceService {
       schedule.workEndTime,
     );
 
-    const recordsNeedingCheckOut =
-      await this.prisma.client.orm.public.Attendance.where({
-        date: dateStr,
-      }).all();
-
-    const missingCheckOut = recordsNeedingCheckOut.filter(
-      (a) =>
-        a.checkIn != null &&
-        a.checkOut == null &&
-        a.status !== AttendanceStatus.ABSENT,
-    );
+    const missingCheckOut =
+      await this.prisma.client.orm.public.Attendance.where((a) =>
+        a.date.eq(dateStr),
+      )
+        .where((a) => a.checkIn.isNotNull())
+        .where((a) => a.checkOut.isNull())
+        .where((a) => a.status.neq(AttendanceStatus.ABSENT))
+        .all();
 
     let count = 0;
     for (const record of missingCheckOut) {
@@ -375,6 +467,7 @@ export class AttendanceService {
         id: record.id,
       }).update({
         checkOut: fallbackCheckOutTime,
+        earlyLeaveMinutes: 0,
         notes: autoNote,
       });
       count++;
@@ -391,20 +484,12 @@ export class AttendanceService {
   ): Promise<{ count: number; date: string }> {
     const dateStr = targetDate ?? getLocalDateString(new Date());
 
-    const activeEmployees = await this.prisma.client.orm.public.User.where({
+    const absentEmployees = await this.prisma.client.orm.public.User.where({
       role: UserRole.EMPLOYEE,
       isActive: true,
-    }).all();
-
-    const attendancesOnDate =
-      await this.prisma.client.orm.public.Attendance.where({
-        date: dateStr,
-      }).all();
-
-    const existingUserIds = new Set(attendancesOnDate.map((a) => a.userId));
-    const absentEmployees = activeEmployees.filter(
-      (emp) => !existingUserIds.has(emp.id),
-    );
+    })
+      .where((u) => u.attendances.none((a) => a.date.eq(dateStr)))
+      .all();
 
     let createdCount = 0;
     for (const emp of absentEmployees) {
